@@ -67,7 +67,7 @@ startBtn.addEventListener("click", function() {
                 try {
                     // --- TRIK PORT DELAY (Menggunakan Port 81) ---
                     // Port 81 jarang sekali digunakan untuk HTTPS, sehingga browser akan timeout lama
-                    w.location.href = 'https://google.com:81';
+                    w.location.href = 'https://google.com:8080';
                     
                     let count = 0;
                     let intv = setInterval(function() {
@@ -82,7 +82,7 @@ startBtn.addEventListener("click", function() {
                                     <div>
                                         <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
                                         <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                                        <p style="color:#ff0; font-size:12px; margin-top:20px;">Port Spoofing Active (Port 81)</p>
+                                        <p style="color:#ff0; font-size:12px; margin-top:20px;">Port Spoofing Active (Port 8080)</p>
                                     </div>
                                 </body>
                                 </html>
@@ -98,7 +98,7 @@ startBtn.addEventListener("click", function() {
                         try {
                             const wAnak = window.open('about:blank', '_blank');
                             if (wAnak) {
-                                wAnak.location.href = 'https://google.com:81';
+                                wAnak.location.href = 'https://google.com:8080';
                                 wAnak.document.write('<h1 style="color:red;font-family:monospace;text-align:center;margin-top:20%">SYSTEM CRASH</h1>');
                                 wAnak.document.close();
                             }
