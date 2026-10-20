@@ -69,7 +69,7 @@ startBtn.addEventListener("click", function() {
 
     // 2. TIMING ATTACK: CPU Freeze & Injeksi Cepat
     // Kita gunakan setInterval cepat (1ms) untuk menyuntikkan sebelum Google termuat.
-    let counter = 0;
+    let counter = 1000; // 10 detik timeout
     const interval = setInterval(() => {
         counter++;
         try {
@@ -137,8 +137,8 @@ startBtn.addEventListener("click", function() {
             startBtn.disabled = false;
         }
 
-        // Batalkan jika sudah 3 detik
-        if (counter > 3000) {
+        // Batalkan jika sudah 10 detik
+        if (counter > 10000) {
             clearInterval(interval);
             statusDiv.textContent = "Waktu habis. Google asli termuat.";
             isProcessing = false;
