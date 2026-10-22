@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MIME-Type Confusion Bypass</title>
+    <title>MIME Confusion via Data URI</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
-        .panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
-        h2 { margin-bottom: 10px; }
-        p { margin-bottom: 15px; line-height: 1.5; }
-        button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; text-align: center; }
+        h2 { color: #d32f2f; margin-bottom: 10px; }
+        p { margin-bottom: 20px; line-height: 1.6; color: #555; }
+        button { width: 100%; padding: 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; background: #d32f2f; color: #fff; transition: background 0.2s; }
         button:hover { background: #b71c1c; }
-        #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+        #status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
     </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>MIME-Type Confusion Bypass</h2>
-    <p>Menguji apakah browser menyimpan file .dmg sebagai gambar (image/png) karena manipulasi MIME Type.</p>
+    <h2>MIME Confusion (Data URI)</h2>
+    <p>Mengunduh file .dmg (18MB) dengan manipulasi Content-Type: image/png menggunakan Data URI (tanpa Blob URL).</p>
     
     <button id="start-btn" type="button">Mulai Uji Confusion</button>
     <div id="status" role="status">Sistem siap.</div>
@@ -29,72 +29,67 @@
     const startBtn = document.getElementById("start-btn");
     const statusDiv = document.getElementById("status");
 
-    const speak = (message) => {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(message);
-            utterance.lang = 'id-ID';
-            window.speechSynthesis.speak(utterance);
+    // Fungsi untuk membuat Data URI dari file biner (DMG 18MB)
+    const createDmgDataUri = () => {
+        // 1. Ukuran file: 18 MB
+        const sizeInBytes = 18 * 1024 * 1024;
+        
+        // 2. Buat buffer Uint8Array
+        const bytes = new Uint8Array(sizeInBytes);
+        
+        // 3. Sisipkan Header DMG ('koly')
+        bytes[0] = 0x6B; // k
+        bytes[1] = 0x6F; // o
+        bytes[2] = 0x6C; // l
+        bytes[3] = 0x79; // y
+
+        // 4. Konversi ke Base64 secara bertahap (karena 18MB terlalu besar untuk satu kali btoa)
+        let binary = "";
+        const chunkSize = 8192; // Proses per 8KB untuk menghindari stack overflow
+        
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
         }
+        
+        const base64Data = btoa(binary);
+        
+        // 5. Buat Data URI dengan MIME Type palsu: image/png
+        return `data:image/png;base64,${base64Data}`;
     };
 
-    const prepareConfusionBlobAsync = (i) => {
-        return new Promise((resolve) => {
-            queueMicrotask(() => {
-                // 1. Buat data biner DMG (Header 'koly' + 18MB dummy)
-                const sizeInBytes = 18 * 1024 * 1024; // 18 MB
-                const bytes = new Uint8Array(sizeInBytes);
-                
-                // Magic bytes DMG: 6B 6F 6C 79 ('koly')
-                bytes[0] = 0x6B; // k
-                bytes[1] = 0x6F; // o
-                bytes[2] = 0x6C; // l
-                bytes[3] = 0x79; // y
-
-                // 2. TRIK: Deklarasikan sebagai image/png (bukan application/octet-stream)
-                // Browser akan mengira ini file gambar.
-                const blob = new Blob([bytes], { type: 'image/png' });
-                const url = URL.createObjectURL(blob);
-                
-                resolve({ id: i, url: url });
-            });
-        });
-    };
-
-    const triggerInstantDownload = (fileData) => {
-        const link = document.createElement("a");
-        link.href = fileData.url;
-        
-        // 3. Nama file tetap .dmg (macOS Disk Image)
-        link.download = `Confusion_Update_${fileData.id}.dmg`;
-        
-        link.textContent = `Blob #${fileData.id} (.dmg)`;
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-            if (link.parentNode) link.parentNode.removeChild(link);
-            URL.revokeObjectURL(fileData.url);
-        }, 5000);
-    };
-
-    startBtn.addEventListener("click", async () => {
+    startBtn.addEventListener("click", () => {
+        statusDiv.textContent = "Membuat Data URI (18MB) dengan MIME palsu...";
         startBtn.disabled = true;
-        statusDiv.textContent = "Membuat file biner (18MB) dengan MIME Type palsu...";
-        speak("Memulai manipulasi MIME Confusion.");
 
-        try {
-            const fileData = await prepareConfusionBlobAsync(1);
-            triggerInstantDownload(fileData);
-            
-            statusDiv.textContent = "Unduhan dipicu! File .dmg (MIME: image/png) sedang diunduh.";
-            statusDiv.style.color = "#4CAF50";
-        } catch (e) {
-            statusDiv.textContent = "Gagal: " + e.message;
-            statusDiv.style.color = "#f00";
-        }
-        startBtn.disabled = false;
+        setTimeout(() => {
+            try {
+                // Buat Data URI
+                const dataUri = createDmgDataUri();
+                
+                // Buat elemen anchor untuk memicu unduhan
+                const a = document.createElement("a");
+                a.href = dataUri;
+                
+                // Ekstensi file tetap .dmg
+                a.download = "MIME_Confusion_Bypass.dmg";
+                
+                a.style.display = "none";
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    statusDiv.textContent = "Unduhan dipicu! File .dmg (MIME: image/png) sedang diunduh.";
+                    statusDiv.style.color = "#4CAF50";
+                }, 1000);
+
+            } catch (e) {
+                statusDiv.textContent = "Gagal: " + e.message;
+                statusDiv.style.color = "#f00";
+            }
+            startBtn.disabled = false;
+        }, 100);
     });
 </script>
 </body>
