@@ -1,86 +1,49 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Multiple Downloads Test (Auto)</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-.panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
-h2 { color: #d32f2f; margin-bottom: 10px; }
-p { margin-bottom: 20px; line-height: 1.6; color: #555; }
-#status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
-.log { background: #1e1e1e; color: #0f0; padding: 10px; border-radius: 6px; font-family: monospace; text-align: left; margin-top: 15px; height: 100px; overflow-y: auto; font-size: 12px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Activation Policy Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
+        h2 { color: #d32f2f; margin-bottom: 10px; }
+        p { margin-bottom: 20px; line-height: 1.6; color: #555; }
+        #status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
+    </style>
 </head>
 
 <body>
-<div class="panel" id="main-panel">
-    <h2>Multiple Downloads Test (Auto)</h2>
-    <p>Memicu 5 unduhan file sekaligus secara otomatis saat halaman dimuat, untuk menguji batas filter browser.</p>
-    <div id="status" role="status">Mempersiapkan multiple downloads...</div>
-    <div class="log" id="log">Log akan muncul di sini...</div>
-</div>
+    <div class="panel" id="main-panel">
+        <h2>User Activation Policy Test</h2>
+        <p>Halaman ini akan mencoba membuka <code>https://google.com</code> secara otomatis tanpa Anda klik apa pun.</p>
+        <div id="status" role="status">Menunggu eksekusi...</div>
+    </div>
 
-<script>
-    const statusDiv = document.getElementById("status");
-    const logDiv = document.getElementById("log");
+    <script>
+        const statusDiv = document.getElementById("status");
 
-    function log(msg) {
-        logDiv.innerHTML += "<br>> " + msg;
-    }
-
-    // Fungsi untuk memicu unduhan satu file
-    const triggerDownload = (id) => {
-        try {
-            // Payload DMG tiruan (Header koly + dummy data)
-            const bytes = new Uint8Array(1024);
-            bytes[0] = 0x6B; // k
-            bytes[1] = 0x6F; // o
-            bytes[2] = 0x6C; // l
-            bytes[3] = 0x79; // y
-
-            const blob = new Blob([bytes], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
+        // Memicu window.open secara otomatis di DOMContentLoaded
+        window.addEventListener('DOMContentLoaded', () => {
+            statusDiv.textContent = "Mencoba membuka pop-up otomatis...";
             
-            // Ekstensi .dmg
-            a.download = `Multi_Download_Test_${id}.dmg`;
-            
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 5000);
-
-            log(`[${id}] File .dmg dipicu.`);
-        } catch (e) {
-            log(`[${id}] Gagal: ${e.message}`);
-        }
-    };
-
-    // Pemicu Otomatis: 5 unduhan dalam satu tarikan napas
-    const startMultipleDownloads = () => {
-        statusDiv.textContent = "Memicu 5 unduhan sekaligus...";
-        
-        // Loop 5 kali secara instan
-        for (let i = 1; i <= 5; i++) {
-            triggerDownload(i);
-        }
-
-        statusDiv.textContent = "Selesai. Cek folder Download Anda.";
-        statusDiv.style.color = "#4CAF50";
-    };
-
-    // MEMICU OTOMATIS SAAT HALAMAN DIMUAT
-    window.addEventListener('load', () => {
-        setTimeout(startMultipleDownloads, 500);
-    });
-</script>
+            try {
+                // Memicu pop-up tanpa interaksi pengguna
+                const newWindow = window.open("https://google.com", "_blank");
+                
+                if (newWindow) {
+                    statusDiv.textContent = "BERHASIL! Pop-up terbuka lebar (Bug Valid).";
+                    statusDiv.style.color = "#4CAF50";
+                } else {
+                    statusDiv.textContent = "GAGAL! Browser memblokir pop-up (Perilaku Normal).";
+                    statusDiv.style.color = "#f00";
+                }
+            } catch (e) {
+                statusDiv.textContent = "GAGAL! Error: " + e.message;
+                statusDiv.style.color = "#f00";
+            }
+        });
+    </script>
 </body>
 </html>
