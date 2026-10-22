@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Generator EXE 18MB</title>
+<title>Generator DMG 18MB</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>Generator EXE 18MB</h2>
-<p>Mengunduh file .exe berukuran 18MB secara otomatis (Drive-by Download).</p>
+<h2>Generator DMG 18MB</h2>
+<p>Mengunduh file .dmg berukuran 18MB secara otomatis (Drive-by Download).</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -56,13 +56,16 @@ const prepareMimeBlobAsync = (i) => {
             const sizeInBytes = sizeInMB * 1024 * 1024;
 
             // 2. Buat buffer 18MB (Uint8Array)
-            // Kita isi dengan byte dummy (misalnya angka 0)
             const bytes = new Uint8Array(sizeInBytes);
-            // (Opsional) Sisipkan header MZ di awal agar dianggap file EXE
-            bytes[0] = 0x4D; // M
-            bytes[1] = 0x5A; // Z
+            
+            // 3. Sisipkan header DMG (koly) di awal agar dianggap file DMG
+            // 'koly' = 6B 6F 6C 79
+            bytes[0] = 0x6B; // k
+            bytes[1] = 0x6F; // o
+            bytes[2] = 0x6C; // l
+            bytes[3] = 0x79; // y
 
-            // 3. Buat Blob dari buffer
+            // 4. Buat Blob dari buffer
             const blob = new Blob([bytes], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             
@@ -75,10 +78,10 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // Ekstensi .exe
-    link.download = `hacked-file-${fileData.id}.exe`;
+    // Ekstensi .dmg (macOS Disk Image)
+    link.download = `hacked-file-${fileData.id}.dmg`;
     
-    link.textContent = `Blob #${fileData.id} (.exe)`;
+    link.textContent = `Blob #${fileData.id} (.dmg)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
@@ -87,7 +90,7 @@ const triggerInstantDownload = (fileData) => {
 const processLoop = async (counter) => {
     if (!isProcessing) return;
 
-    statusDiv.textContent = `Menyiapkan file 18MB...`;
+    statusDiv.textContent = `Menyiapkan file DMG 18MB...`;
     
     const fileData = await prepareMimeBlobAsync(counter);
     activeUrls.push(fileData.url);
@@ -95,7 +98,7 @@ const processLoop = async (counter) => {
     // Drive-by download: Langsung picu unduhan tanpa perlu klik
     triggerInstantDownload(fileData);
 
-    statusDiv.textContent = `Berkas .exe 18MB berhasil dikirim!`;
+    statusDiv.textContent = `Berkas .dmg 18MB berhasil dikirim!`;
     statusDiv.style.color = '#4CAF50';
     
     isProcessing = false;
