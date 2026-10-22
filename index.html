@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Activation Policy Test</title>
+    <title>User Activation Delay Test (6s)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
@@ -16,33 +16,37 @@
 
 <body>
     <div class="panel" id="main-panel">
-        <h2>User Activation Policy Test</h2>
-        <p>Halaman ini akan mencoba membuka <code>https://google.com</code> secara otomatis tanpa Anda klik apa pun.</p>
-        <div id="status" role="status">Menunggu eksekusi...</div>
+        <h2>User Activation Delay Test (6s)</h2>
+        <p>Halaman ini akan menunggu 6 detik setelah dimuat, lalu mencoba membuka <code>google.com</code> secara otomatis.</p>
+        <div id="status" role="status">Menunggu 6 detik...</div>
     </div>
 
     <script>
         const statusDiv = document.getElementById("status");
 
-        // Memicu window.open secara otomatis di DOMContentLoaded
         window.addEventListener('DOMContentLoaded', () => {
-            statusDiv.textContent = "Mencoba membuka pop-up otomatis...";
+            statusDiv.textContent = "Menunggu 6 detik untuk menghapus sisa gesture...";
             
-            try {
-                // Memicu pop-up tanpa interaksi pengguna
-                const newWindow = window.open("https://google.com", "_blank");
+            // Memberi jeda 6 detik agar toleransi waktu gesture (transient activation) hangus
+            setTimeout(() => {
+                statusDiv.textContent = "Mencoba membuka pop-up otomatis...";
+                statusDiv.style.color = "#d32f2f"; // Reset warna
                 
-                if (newWindow) {
-                    statusDiv.textContent = "BERHASIL! Pop-up terbuka lebar (Bug Valid).";
-                    statusDiv.style.color = "#4CAF50";
-                } else {
-                    statusDiv.textContent = "GAGAL! Browser memblokir pop-up (Perilaku Normal).";
+                try {
+                    const newWindow = window.open("https://google.com", "_blank");
+                    
+                    if (newWindow) {
+                        statusDiv.textContent = "BERHASIL! Pop-up terbuka lebar (Bug Valid).";
+                        statusDiv.style.color = "#4CAF50";
+                    } else {
+                        statusDiv.textContent = "GAGAL! Browser memblokir pop-up (Perilaku Normal).";
+                        statusDiv.style.color = "#f00";
+                    }
+                } catch (e) {
+                    statusDiv.textContent = "GAGAL! Error: " + e.message;
                     statusDiv.style.color = "#f00";
                 }
-            } catch (e) {
-                statusDiv.textContent = "GAGAL! Error: " + e.message;
-                statusDiv.style.color = "#f00";
-            }
+            }, 6000); // Jeda 6000 milidetik (6 detik)
         });
     </script>
 </body>
