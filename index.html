@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Auto Fullscreen + Auto Download</title>
+<title>Auto Download Only</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
@@ -16,51 +16,39 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Auto Fullscreen + Download</h2>
-    <p>Memicu layar penuh (Fullscreen) dan unduhan file .dmg secara otomatis tanpa interaksi fisik.</p>
+    <h2>Auto Download Only</h2>
+    <p>Memicu unduhan file .dmg secara otomatis saat halaman dimuat (tanpa interaksi fisik).</p>
     <div id="status" role="status">Memuat halaman...</div>
 </div>
 
 <script>
     const statusDiv = document.getElementById("status");
 
-    // 1. Payload DMG
+    // 1. Payload DMG (Header 'koly' + Dummy Data)
     const createDmgPayload = () => {
         const sizeInBytes = 1024; 
         const bytes = new Uint8Array(sizeInBytes);
-        bytes[0] = 0x6B; bytes[1] = 0x6F; bytes[2] = 0x6C; bytes[3] = 0x79; // 'koly'
+        
+        // Magic bytes DMG: 'koly'
+        bytes[0] = 0x6B; // k
+        bytes[1] = 0x6F; // o
+        bytes[2] = 0x6C; // l
+        bytes[3] = 0x79; // y
+
         return bytes;
     };
 
-    // 2. Fungsi Fullscreen Otomatis
-    const triggerFullscreen = () => {
-        try {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch((err) => {
-                    console.log("Fullscreen diblokir:", err.message);
-                });
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
-            }
-        } catch (e) {
-            console.log("Gagal Fullscreen:", e.message);
-        }
-    };
-
-    // 3. Fungsi Unduhan Otomatis
+    // 2. Fungsi Unduhan
     const triggerDownload = () => {
         try {
-            statusDiv.textContent = "Memicu unduhan dan fullscreen...";
+            statusDiv.textContent = "Memicu unduhan otomatis...";
             
             const bytes = createDmgPayload();
             const blob = new Blob([bytes], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Auto_Fullscreen_Payload.dmg';
+            a.download = 'Auto_Payload.dmg';
             a.style.display = 'none';
             document.body.appendChild(a);
             
@@ -80,24 +68,17 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
         }
     };
 
-    // MEMICU SEMUANYA SECARA OTOMATIS SAAT DOM SIAP
+    // MEMICU UNDUHAN SECARA OTOMATIS SAAT DOM SIAP
     window.addEventListener("DOMContentLoaded", () => {
-        // 1. Coba Fullscreen
-        triggerFullscreen();
-        
-        // 2. Coba Unduh (dengan sedikit delay agar tidak bentrok dengan proses fullscreen)
-        setTimeout(() => {
-            triggerDownload();
-        }, 500); // Delay 500ms
+        triggerDownload();
     });
 
-    // FALLBACK: Jika DOMContentLoaded diblokir, coba trigger via Event Palsu setelah 2 detik
+    // FALLBACK: Jika DOMContentLoaded diblokir, coba trigger setelah 1 detik
     setTimeout(() => {
         if (document.getElementById("status").textContent === "Memuat halaman...") {
-            triggerFullscreen();
             triggerDownload();
         }
-    }, 2000);
+    }, 1000);
 </script>
 </body>
 </html>
