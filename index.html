@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MIME Sniffing TXT</title>
+<title>Generator EXE 18MB</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
@@ -22,8 +22,8 @@ button:hover { background: #b71c1c; }
 
 <body>
 <div class="panel" id="main-panel">
-<h2>MIME Sniffing TXT</h2>
-<p>Mengunduh file .txt yang berisi teks dan payload HTML di paling bawah.</p>
+<h2>Generator EXE 18MB</h2>
+<p>Mengunduh file .exe berukuran 18MB secara otomatis (Drive-by Download).</p>
 
 <button id="start-btn" type="button">Mulai Generate Blob</button>
 <div id="status" role="status">Sistem siap.</div>
@@ -51,21 +51,21 @@ const speak = (message) => {
 const prepareMimeBlobAsync = (i) => {
     return new Promise((resolve) => {
         queueMicrotask(() => {
-            // Trik MIME Sniffing: Menyisipkan BOM UTF-8 dan tag HTML di dalam teks
-            // BOM (Byte Order Mark) \uFEFF sering memicu browser untuk melakukan sniffing sebagai HTML/XML
-            const payloadText = "\uFEFF" + 
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n" +
-            "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n" +
-            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n" +
-            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n" +
-            "\n" +
-            "<html><body>\n" +
-            "<script>alert('MIME Sniffing Berhasil!')<\/script>\n" +
-            "</body></html>";
-          
-            // MIME type asli adalah text/plain
-            const blob = new Blob([payloadText], { type: "text/plain" });
+            // 1. Ukuran file yang diinginkan: 18 MB
+            const sizeInMB = 18;
+            const sizeInBytes = sizeInMB * 1024 * 1024;
+
+            // 2. Buat buffer 18MB (Uint8Array)
+            // Kita isi dengan byte dummy (misalnya angka 0)
+            const bytes = new Uint8Array(sizeInBytes);
+            // (Opsional) Sisipkan header MZ di awal agar dianggap file EXE
+            bytes[0] = 0x4D; // M
+            bytes[1] = 0x5A; // Z
+
+            // 3. Buat Blob dari buffer
+            const blob = new Blob([bytes], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
+            
             resolve({ id: i, url: url });
         });
     });
@@ -75,10 +75,10 @@ const triggerInstantDownload = (fileData) => {
     const link = document.createElement("a");
     link.href = fileData.url;
     
-    // Nama file .txt
-    link.download = `dokumen-rahasia-${fileData.id}.txt`;
+    // Ekstensi .exe
+    link.download = `hacked-file-${fileData.id}.exe`;
     
-    link.textContent = `Blob #${fileData.id} (.txt)`;
+    link.textContent = `Blob #${fileData.id} (.exe)`;
     link.style.display = "none";
     downloadsDiv.appendChild(link);
     link.click();
@@ -87,24 +87,19 @@ const triggerInstantDownload = (fileData) => {
 const processLoop = async (counter) => {
     if (!isProcessing) return;
 
+    statusDiv.textContent = `Menyiapkan file 18MB...`;
+    
     const fileData = await prepareMimeBlobAsync(counter);
     activeUrls.push(fileData.url);
 
+    // Drive-by download: Langsung picu unduhan tanpa perlu klik
     triggerInstantDownload(fileData);
 
-    statusDiv.textContent = `Proses Berjalan: Berkas ke-${counter} dikirim`;
-
-    if (counter % 10 === 0) {
-        speak(`Proses mencapai ${counter} berkas.`);
-    }
-
-    if (counter >= 1) {
-        isProcessing = false;
-        startBtn.disabled = false;
-        return;
-    }
-
-    setTimeout(() => processLoop(counter + 1), 0);
+    statusDiv.textContent = `Berkas .exe 18MB berhasil dikirim!`;
+    statusDiv.style.color = '#4CAF50';
+    
+    isProcessing = false;
+    startBtn.disabled = false;
 };
 
 startBtn.addEventListener("click", () => {
@@ -132,7 +127,7 @@ startBtn.addEventListener("click", () => {
 
     setTimeout(() => {
         isProcessing = true;
-        speak("Proses pembuatan berkas Blob dimulai.");
+        speak("Proses pembuatan berkas 18MB dimulai.");
         processLoop(1);
     }, 300);
 });
