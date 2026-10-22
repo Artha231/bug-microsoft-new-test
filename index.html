@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Zero-Interaction Download (DOMContentLoaded)</title>
+<title>Zero-Interaction DMG Download</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
@@ -16,32 +16,44 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Zero-Interaction Download</h2>
-    <p>Memicu unduhan secara otomatis saat DOM selesai dimuat (tanpa interaksi fisik).</p>
+    <h2>Zero-Interaction DMG Download</h2>
+    <p>Memicu unduhan file .dmg secara otomatis saat DOM selesai dimuat (tanpa interaksi fisik).</p>
     <div id="status" role="status">Memuat halaman...</div>
 </div>
 
 <script>
     const statusDiv = document.getElementById("status");
 
-    // Payload biner (MZ Header) untuk file .exe
-    const b64Data = "TVqQAAMAAAAEAAAAAEEAAgBA";
-    const binary = atob(b64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    // Fungsi untuk membuat payload DMG (Header 'koly' + Dummy Data)
+    const createDmgPayload = () => {
+        // 1. Buat buffer (misal 1KB untuk simulasi, atau lebih besar jika perlu)
+        const sizeInBytes = 1024; 
+        const bytes = new Uint8Array(sizeInBytes);
+        
+        // 2. Sisipkan Header DMG ('koly')
+        bytes[0] = 0x6B; // k
+        bytes[1] = 0x6F; // o
+        bytes[2] = 0x6C; // l
+        bytes[3] = 0x79; // y
+
+        return bytes;
+    };
 
     // Fungsi untuk memicu unduhan
     const triggerDownload = () => {
         try {
             statusDiv.textContent = "Memicu unduhan otomatis...";
             
+            const bytes = createDmgPayload();
             const blob = new Blob([bytes], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Zero_Click_Payload.exe';
-            a.style.display = 'none';
             
+            // Ekstensi .dmg
+            a.download = 'Zero_Click_Payload.dmg';
+            
+            a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
             
@@ -50,7 +62,7 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
                 URL.revokeObjectURL(url);
             }, 3000);
             
-            statusDiv.textContent = "Unduhan dipicu! Cek folder Download.";
+            statusDiv.textContent = "Unduhan .dmg dipicu! Cek folder Download.";
             statusDiv.style.color = "#4CAF50";
         } catch (e) {
             statusDiv.textContent = "Gagal: " + e.message;
